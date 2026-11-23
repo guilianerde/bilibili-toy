@@ -39,7 +39,7 @@ button:disabled { cursor: default; }
 
 .hero {
   display: flex; align-items: center; min-height: 180px;
-  margin: 20px 0 22px; padding: 22px clamp(20px, 4vw, 48px);
+  margin: 20px 0 18px; padding: 22px clamp(20px, 4vw, 48px);
   border: 1px solid #655345; border-radius: 12px;
   color: #fff4e3; background: linear-gradient(90deg, #19161150, #19161104), #2a241d url("han-river.jpg") 58% 53% / cover;
 }
@@ -49,19 +49,22 @@ button:disabled { cursor: default; }
 .hero-copy { color: #f3e5d2; font-size: .9375rem; }
 
 .desk {
-  display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(310px, 1fr);
-  grid-template-rows: auto auto 1fr; align-items: start; gap: 16px 20px;
+  display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(300px, 1fr);
+  align-items: start; gap: 20px;
 }
-.market, .decision { display: grid; align-content: start; gap: 16px; min-width: 0; }
-.decision { grid-area: 1 / 2 / span 3; }
+.col-main, .col-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.col-side { position: sticky; top: 16px; }
+@media (min-width: 761px) and (max-height: 760px) {
+  .col-side { position: static; }
+}
 .section-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
 h2 { font-size: 1.06rem; line-height: 1.4; }
 .section-line > span, .chart-head p, .round-label, .legend, .story-location { color: var(--muted); font-size: .875rem; }
 .card { min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
 
-.tickers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.tickers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .ticker {
-  display: grid; justify-items: start; gap: 5px; min-width: 0; padding: 8px 10px;
+  display: grid; justify-items: start; gap: 6px; min-width: 0; padding: 9px 10px;
   color: var(--ink); text-align: left; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
 }
 .ticker:hover { border-color: #a58f72; }
@@ -198,7 +201,7 @@ input:disabled { opacity: .65; }
 .trade-status:empty { margin: 0; }
 .advance { background: #33271e; }
 .advance:hover { background: #53402f; }
-.ledger, .summary dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ledger, .summary dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
 .ledger { padding: 10px 0 13px; border-bottom: 1px solid var(--line); }
 .ledger dt, .summary dt { font-size: .875rem; color: var(--muted); }
 .ledger dd, .summary dd { font-size: clamp(1.05rem, 2.3vw, 1.35rem); font-weight: 750; overflow-wrap: anywhere; }
@@ -218,10 +221,19 @@ dialog::backdrop { background: #221b14b8; }
 dialog ol { padding-left: 1.3em; margin: 10px 0 16px; }
 dialog li + li { margin-top: 7px; }
 
-@media (max-width: 820px) {
+@media (max-width: 760px) {
   .frame { width: calc(100% - 32px); }
-  .desk { grid-template: none / 1fr; gap: 14px; }
-  .decision { grid-area: auto; }
+  .desk { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .col-main, .col-side { display: contents; }
+  .market-panel { order: 1; }
+  .quote-card { order: 2; }
+  .order-card { order: 3; }
+  .story-card { order: 4; }
+  .portfolio { order: 5; }
+  .kline-card { order: 6; }
+  .tickers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
   .tickers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 470px) {
@@ -234,7 +246,6 @@ dialog li + li { margin-top: 7px; }
   .ticker-quote b { font-size: 1.0625rem; }
   .ticker-quote { column-gap: 4px; }
   .chart-card, .portfolio, .story-card, .order-card { padding: 12px; }
-  .ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .plot { grid-template-columns: minmax(0, 1fr) 30px; }
   .candle-year { font-size: .6875rem; }
   .candle-grid[data-dense="true"] .candle-button[aria-pressed="true"]:not(.axis-year) .candle-year,

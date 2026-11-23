@@ -29,50 +29,27 @@
     </section>
 
     <div class="desk">
-      <section aria-labelledby="market-title">
-        <div class="section-line">
-          <h2 id="market-title">势力行情</h2>
-          <span id="market-status">铜钱 / 股</span>
-        </div>
-        <div class="tickers" id="tickers" role="group" aria-label="选择势力"></div>
-      </section>
+      <div class="col-main">
+        <section class="market-panel" aria-labelledby="market-title">
+          <div class="section-line">
+            <h2 id="market-title">势力行情</h2>
+            <span id="market-status">铜钱 / 股</span>
+          </div>
+          <div class="tickers" id="tickers" role="group" aria-label="选择势力"></div>
+        </section>
 
-      <section class="card chart-card quote-card" aria-labelledby="quote-chart-title">
-        <div class="chart-head">
-          <div>
-            <h2 id="quote-chart-title">实时走势</h2>
-            <p id="quote-chart-status"></p>
-          </div>
-          <div class="quote-readout" id="quote-readout">
-            <strong id="quote-chart-price"></strong><span>铜钱 / 股</span>
-          </div>
-        </div>
-        <p id="quote-chart-empty" hidden>挂牌后开始记录分时行情。</p>
-        <canvas id="quote-line" role="img"></canvas>
-      </section>
-
-      <div class="decision">
-        <section class="card order-card" id="order" aria-labelledby="order-title">
-          <div class="section-line"><h2 id="order-title">交易单</h2><span id="quote"></span></div>
-          <div id="preopen">
-            <p>10,000 铜钱起步。开盘后剧情和报价会自动推进，约 8 分钟后收盘。</p>
-            <button type="button" class="button advance" id="open-market">开盘</button>
-          </div>
-          <form id="trade" hidden>
-            <div class="sides" role="group" aria-label="交易方向">
-              <button type="button" id="buy" aria-pressed="true">买入</button>
-              <button type="button" id="sell" aria-pressed="false">卖出</button>
+        <section class="card chart-card quote-card" aria-labelledby="quote-chart-title">
+          <div class="chart-head">
+            <div>
+              <h2 id="quote-chart-title">实时走势</h2>
+              <p id="quote-chart-status"></p>
             </div>
-            <div class="quantity-head"><label for="quantity">股数</label><span id="capacity"></span></div>
-            <div class="quantity-row">
-              <input type="number" id="quantity" name="quantity" inputmode="numeric" min="1" step="1" value="1" required>
-              <button type="button" class="max" id="max">最大</button>
+            <div class="quote-readout" id="quote-readout">
+              <strong id="quote-chart-price"></strong><span>铜钱 / 股</span>
             </div>
-            <div class="order-total"><span>手续费 · 0.5%</span><span id="estimate-fee"></span></div>
-            <div class="order-total"><span id="estimate-label">预计支出</span><strong id="estimate"></strong></div>
-            <button type="submit" class="button trade-submit" id="submit">确认买入</button>
-          </form>
-          <p class="trade-status" id="trade-status" role="status"></p>
+          </div>
+          <p id="quote-chart-empty" hidden>挂牌后开始记录分时行情。</p>
+          <canvas id="quote-line" role="img"></canvas>
         </section>
 
         <section class="card story-card" aria-labelledby="story-title">
@@ -97,10 +74,8 @@
             <button type="button" class="button advance" id="restart">再开一局</button>
           </div>
         </section>
-      </div>
 
-      <div class="market">
-        <section class="card chart-card" aria-labelledby="chart-title">
+        <section class="card chart-card kline-card" aria-labelledby="chart-title">
           <div class="chart-head">
             <div>
               <h2 id="chart-title">势力 K 线</h2>
@@ -125,6 +100,31 @@
             <p id="candle-note"></p>
           </div>
         </section>
+      </div>
+
+      <aside class="col-side" aria-label="交易单与账本">
+        <section class="card order-card" id="order" aria-labelledby="order-title">
+          <div class="section-line"><h2 id="order-title">交易单</h2><span id="quote"></span></div>
+          <div id="preopen">
+            <p>10,000 铜钱起步。开盘后剧情和报价会自动推进，约 8 分钟后收盘。</p>
+            <button type="button" class="button advance" id="open-market">开盘</button>
+          </div>
+          <form id="trade" hidden>
+            <div class="sides" role="group" aria-label="交易方向">
+              <button type="button" id="buy" aria-pressed="true">买入</button>
+              <button type="button" id="sell" aria-pressed="false">卖出</button>
+            </div>
+            <div class="quantity-head"><label for="quantity">股数</label><span id="capacity"></span></div>
+            <div class="quantity-row">
+              <input type="number" id="quantity" name="quantity" inputmode="numeric" min="1" step="1" value="1" required>
+              <button type="button" class="max" id="max">最大</button>
+            </div>
+            <div class="order-total"><span>手续费 · 0.5%</span><span id="estimate-fee"></span></div>
+            <div class="order-total"><span id="estimate-label">预计支出</span><strong id="estimate"></strong></div>
+            <button type="submit" class="button trade-submit" id="submit">确认买入</button>
+          </form>
+          <p class="trade-status" id="trade-status" role="status"></p>
+        </section>
 
         <section class="card portfolio" aria-labelledby="portfolio-title">
           <div class="section-line">
@@ -144,7 +144,7 @@
             </table>
           </div>
         </section>
-      </div>
+      </aside>
     </div>
 
     <footer>剧情改编自《三国演义》 · 行情使用虚拟铜钱</footer>
