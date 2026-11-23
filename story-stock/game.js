@@ -115,23 +115,21 @@ function renderTape() {
   $("tape-wire").textContent = latestBrief ? "驿报 " + latestBrief.year + " · " + latestBrief.where : "";
 }
 
-const dispatchTicks = (count) =>
-  Array.from({ length: count }, (_, index) => Math.round((index + 1) * (ticksPerEvent - 1) / count));
-
 function totalDispatches() {
   return prologue.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0) +
     story.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0);
 }
 
 function revealedDispatches() {
-  const feed = prologue.flatMap((event) => event.briefs ?? []);
+  const feed = prologue.flatMap((event, eventIndex) =>
+    (event.briefs ?? []).map((brief, briefIndex) => ({ ...brief, key: "p" + eventIndex + ":" + briefIndex })));
   const segment = Math.floor(market.tick / ticksPerEvent);
   const elapsed = market.tick % ticksPerEvent;
   story.forEach((event, index) => {
     const briefs = event.briefs ?? [];
     const shown = index < segment ? briefs.length :
-      index === segment ? dispatchTicks(briefs.length).filter((tick) => tick <= elapsed).length : 0;
-    feed.push(...briefs.slice(0, shown));
+      index === segment ? briefTicks(briefs.length).filter((tick) => tick <= elapsed).length : 0;
+    feed.push(...briefs.slice(0, shown).map((brief, briefIndex) => ({ ...brief, key: index + ":" + briefIndex })));
   });
   return feed;
 }
@@ -139,7 +137,7 @@ function revealedDispatches() {
 function dispatchItem(brief, fresh) {
   const item = document.createElement("li");
   item.className = "dispatch" + (fresh ? " is-new" : "");
-  item.dataset.tag = brief.tag ?? "";
+  if (brief.faction) item.dataset.faction = brief.faction;
   const meta = document.createElement("p");
   meta.className = "dispatch-meta";
   const when = document.createElement("time");
@@ -148,6 +146,13 @@ function dispatchItem(brief, fresh) {
   where.className = "dispatch-where";
   where.textContent = brief.where;
   meta.append(when, where);
+  if (brief.faction) {
+    const faction = factions.find((item) => item.id === brief.faction);
+    const mark = document.createElement("span");
+    mark.className = "dispatch-source";
+    mark.textContent = faction ? faction.name : brief.faction;
+    meta.append(mark);
+  }
   if (brief.chapter) {
     const chapter = document.createElement("span");
     chapter.className = "dispatch-chapter";
@@ -160,14 +165,28 @@ function dispatchItem(brief, fresh) {
     mark.textContent = "新";
     meta.append(mark);
   }
-  const tag = document.createElement("span");
-  tag.className = "dispatch-tag";
-  tag.textContent = brief.tag ?? "军情";
-  meta.append(tag);
   const text = document.createElement("p");
   text.className = "dispatch-text";
   text.textContent = brief.text;
   item.append(meta, text);
+  const impacts = market.briefImpacts.get(brief.key);
+  if (impacts?.length) {
+    const row = document.createElement("p");
+    row.className = "dispatch-move";
+    for (const { faction, before, after } of impacts) {
+      const change = before ? (after - before) / before : 0;
+      const move = document.createElement("span");
+      move.className = "dispatch-move-item";
+      move.innerHTML = faction.name + " <b class=\"" + tone(after === 0 ? -1 : change) + "\">" +
+        (after === 0 ? "退市" : before === null ? "挂牌 " + format(after) : percent(change)) + "</b>";
+      row.append(move);
+    }
+    item.append(row);
+  }
+  const tag = document.createElement("span");
+  tag.className = "dispatch-tag";
+  tag.textContent = brief.tag ?? "军情";
+  meta.append(tag);
   return item;
 }
 
@@ -204,24 +223,26 @@ function renderDispatches() {
 function renderArchive() {
   const revealed = Math.floor(market.tick / ticksPerEvent);
   const stock = market.stocks[selected];
-  const rows = story.map((event, index) => {
-    const state = finished() || (openedAt !== null && index < revealed) ? "revealed" :
-      openedAt !== null && index === revealed ? "current" : "pending";
+  // Unexposed main events stay hidden: their titles and years never reach the archive.
+  const rows = story.flatMap((event, index) => {
+    const state = finished() || (openedAt !== null && index < revealed) ? "revealed" : "pending";
+    if (state === "pending") return [];
     const candle = stock.candles.find((item) => item.event === event);
-    const price = state === "revealed" && candle ? (candle.close === 0 ? "退市" : format(candle.close)) : "—";
-    const status = state === "revealed" ? "已揭晓" : state === "current" ? "进行中" : "待揭晓";
-    return `<li class="archive-row" data-state="${state}">` +
+    const price = candle ? (candle.close === 0 ? "退市" : format(candle.close)) : "—";
+    const status = "已揭晓";
+    return [`<li class="archive-row" data-state="${state}">` +
       `<time>${event.year}</time>` +
       `<span class="archive-event">${event.title}</span>` +
       `<span class="archive-meta"><span class="archive-status">${status}</span>` +
       `<span class="archive-price">${price}</span></span>` +
-      `</li>`;
+      `</li>`];
   }).join("");
-  $("archive-list").innerHTML = rows;
+  $("archive-list").innerHTML = rows || '<li class="archive-empty">尚无已揭晓的军情。</li>';
   $("archive-count").textContent = finished() ? story.length + " / " + story.length + " · 已收盘" :
     openedAt === null ? "0 / " + story.length + " · 待开盘" :
     revealed + " / " + story.length + " 已揭晓";
-  $("archive-note").textContent = "收盘价按 " + stock.faction.name + "；未挂牌记 —，退市当节记「退市」";
+  $("archive-note").textContent = "收盘价按 " + stock.faction.name +
+    "；未揭晓的军情不列，未挂牌记 —，退市当节记「退市」";
 }
 
 function renderLedger() {
@@ -297,6 +318,8 @@ function renderChart() {
   const from = candles[0].event.year;
   const to = (last.event ?? candles.at(-2).event).year;
   const years = from === to ? String(from) : from + "–" + to;
+  const upcoming = story.find((event, index) =>
+    index >= Math.floor(market.tick / ticksPerEvent) && event.quotes[faction.id] !== undefined);
   $("chart-range").textContent = years + " 年 · " + (last.close === 0 ? "完整走势 · 已退市" :
     finished() ? "完整走势 · 已收盘" : last.event ? "每根对应一段行情" : "盘中 · 每秒更新");
 
@@ -395,14 +418,30 @@ function renderStory() {
         note: notice ? "持仓 " + format(notice.shares) + " 股清零，损失 " + coins(notice.loss) : ""
       };
     });
-    $("impact").innerHTML = impacts.map(({ name, label, tone: cls, note }) =>
+    $("impact").innerHTML = impacts.filter(({ label }) => label !== "0.0%").map(({ name, label, tone: cls, note }) =>
       `<span class="impact-item">${name} <strong class="${cls}">${label}</strong>` +
       (note ? `<small>${note}</small>` : "") + "</span>").join("");
+    // Briefs in the run-up can move a faction too; show the most recent moves beside the main outcome.
+    const previous = story[revealed - 1];
+    const runUp = (previous?.briefs ?? []).flatMap((_, briefIndex) =>
+      market.briefImpacts.get((revealed - 1) + ":" + briefIndex) ?? [])
+      .filter(({ faction }) => !impacts.some((impact) => impact.name === faction.name));
+    const seen = new Set();
+    $("impact").insertAdjacentHTML("beforeend", runUp.reverse().filter(({ faction }) => {
+      if (seen.has(faction.id)) return false;
+      seen.add(faction.id);
+      return true;
+    }).map(({ faction, before, after }) => {
+      const change = before ? (after - before) / before : 0;
+      return `<span class="impact-item impact-brief">${faction.name} <strong class="${tone(change)}">` +
+        (after === 0 ? "退市" : before === null ? "挂牌 " + format(after) : percent(change)) +
+        "</strong><small>驿报影响</small></span>";
+    }).join(""));
     if (revealed > previousRevealed) {
       showToast({
         label: "第 " + revealed + " 条军情 · " + latest.year + " 年",
         title: latest.title,
-        items: impacts.slice(0, 4).map(({ name, label, note }) =>
+        items: impacts.filter(({ label }) => label !== "0.0%").slice(0, 4).map(({ name, label, note }) =>
           name + " " + label + (note ? "，" + note : ""))
       });
     }

@@ -22,6 +22,23 @@ function recordPrice(stock, price, event = null) {
   candle.event = event;
 }
 
+// A brief lands at one of these ticks inside the 24-second run-up to a main event.
+function briefTicks(count) {
+  return Array.from({ length: count }, (_, index) => Math.round((index + 1) * (ticksPerEvent - 1) / count));
+}
+
+function briefAt(tick) {
+  if (tick <= 0 || tick >= totalTicks) return null;
+  const elapsed = (tick - 1) % ticksPerEvent + 1;
+  if (elapsed >= ticksPerEvent) return null;
+  const eventIndex = Math.floor((tick - 1) / ticksPerEvent);
+  const event = story[eventIndex];
+  const briefs = event?.briefs ?? [];
+  const briefIndex = briefTicks(briefs.length).indexOf(elapsed);
+  if (briefIndex < 0) return null;
+  return { eventIndex, briefIndex, event, key: eventIndex + ":" + briefIndex };
+}
+
 function createMarket() {
   const stocks = factions.map((faction) => {
     const stock = { faction, anchor: null, candles: [], quoteHistory: [], shares: 0, cost: 0 };
@@ -35,7 +52,10 @@ function createMarket() {
     return stock;
   });
 
-  return { stocks, tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, realized: 0, news: [] };
+  return {
+    stocks, tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, realized: 0,
+    news: [], briefImpacts: new Map()
+  };
 }
 
 function assetValue(market) {
@@ -53,14 +73,22 @@ function advanceMarket(market, targetTick, random = Math.random) {
   while (market.tick < end) {
     market.tick += 1;
     const event = market.tick % ticksPerEvent === 0 ? story[market.tick / ticksPerEvent - 1] : null;
+    const brief = event ? null : briefAt(market.tick);
+    const briefQuotes = brief ? brief.event.briefs[brief.briefIndex].quotes : undefined;
     if (event) market.news = [];
     for (const stock of market.stocks) {
       const price = currentPrice(stock);
-      const shock = event?.quotes[stock.faction.id];
+      const shock = event?.quotes[stock.faction.id] ?? briefQuotes?.[stock.faction.id];
       if (shock === undefined && !(price > 0)) continue;
       const nextPrice = shock ?? (event ? price : driftPrice(price, stock.anchor, random));
       if (shock !== undefined) {
-        market.news.push({ faction: stock.faction, before: price, after: shock });
+        if (event) {
+          market.news.push({ faction: stock.faction, before: price, after: shock });
+        } else {
+          const impacts = market.briefImpacts.get(brief.key) ?? [];
+          impacts.push({ faction: stock.faction, before: price, after: shock });
+          market.briefImpacts.set(brief.key, impacts);
+        }
         stock.anchor = shock;
         if (shock === 0) {
           if (stock.shares > 0) {
