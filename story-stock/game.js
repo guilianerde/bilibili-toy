@@ -17,6 +17,8 @@ let openedAt = null;
 let timer;
 let displayedPrice;
 let revealedCount = 0;
+let renderedDispatches = -1;
+let dispatchFreshTimer;
 
 const tickers = factions.map((faction, index) => {
   const button = document.createElement("button");
@@ -108,6 +110,95 @@ function renderTape() {
     "下条军情 " + (ticksPerEvent - market.tick % ticksPerEvent) + " 秒";
   $("tape-next").textContent = finished() ? "本局结束" :
     openedAt === null ? "首节 · " + upcoming.preview : "下一节 · " + upcoming.preview;
+  const feed = revealedDispatches();
+  const latestBrief = feed.at(-1);
+  $("tape-wire").textContent = latestBrief ? "驿报 " + latestBrief.year + " · " + latestBrief.where : "";
+}
+
+const dispatchTicks = (count) =>
+  Array.from({ length: count }, (_, index) => Math.round((index + 1) * (ticksPerEvent - 1) / count));
+
+function totalDispatches() {
+  return prologue.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0) +
+    story.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0);
+}
+
+function revealedDispatches() {
+  const feed = prologue.flatMap((event) => event.briefs ?? []);
+  const segment = Math.floor(market.tick / ticksPerEvent);
+  const elapsed = market.tick % ticksPerEvent;
+  story.forEach((event, index) => {
+    const briefs = event.briefs ?? [];
+    const shown = index < segment ? briefs.length :
+      index === segment ? dispatchTicks(briefs.length).filter((tick) => tick <= elapsed).length : 0;
+    feed.push(...briefs.slice(0, shown));
+  });
+  return feed;
+}
+
+function dispatchItem(brief, fresh) {
+  const item = document.createElement("li");
+  item.className = "dispatch" + (fresh ? " is-new" : "");
+  item.dataset.tag = brief.tag ?? "";
+  const meta = document.createElement("p");
+  meta.className = "dispatch-meta";
+  const when = document.createElement("time");
+  when.textContent = brief.year + " 年";
+  const where = document.createElement("span");
+  where.className = "dispatch-where";
+  where.textContent = brief.where;
+  meta.append(when, where);
+  if (brief.chapter) {
+    const chapter = document.createElement("span");
+    chapter.className = "dispatch-chapter";
+    chapter.textContent = brief.chapter;
+    meta.append(chapter);
+  }
+  if (fresh) {
+    const mark = document.createElement("span");
+    mark.className = "dispatch-new";
+    mark.textContent = "新";
+    meta.append(mark);
+  }
+  const tag = document.createElement("span");
+  tag.className = "dispatch-tag";
+  tag.textContent = brief.tag ?? "军情";
+  meta.append(tag);
+  const text = document.createElement("p");
+  text.className = "dispatch-text";
+  text.textContent = brief.text;
+  item.append(meta, text);
+  return item;
+}
+
+function renderDispatches() {
+  const feed = revealedDispatches();
+  $("dispatch-count").textContent = feed.length + " / " + totalDispatches() + " 条 · " +
+    (finished() ? "已截稿" : openedAt === null ? "开市前简报" : "陆续送达");
+  $("dispatch-empty").hidden = feed.length > 0;
+  if (feed.length === renderedDispatches) return;
+
+  const initial = renderedDispatches < 0;
+  const added = initial ? feed.length : feed.length - renderedDispatches;
+  renderedDispatches = feed.length;
+  // Newest first. Keep a reader's scroll position unless they are at the top.
+  const list = $("dispatch-list");
+  const stickToTop = list.scrollTop <= 4;
+  list.querySelectorAll(".is-new").forEach((item) => item.classList.remove("is-new"));
+  if (initial) {
+    list.replaceChildren(...feed.slice().reverse().map((brief) => dispatchItem(brief, false)));
+    return;
+  }
+  if (added <= 0) return;
+
+  list.prepend(...feed.slice(-added).reverse().map((brief, index) => dispatchItem(brief, index < 4)));
+  if (stickToTop) list.scrollTop = 0;
+  const latest = feed.at(-1);
+  $("dispatch-status").textContent = "新驿报，" + latest.year + " 年，" + latest.where + "：" + latest.text;
+  clearTimeout(dispatchFreshTimer);
+  dispatchFreshTimer = setTimeout(() => {
+    list.querySelectorAll(".is-new").forEach((item) => item.classList.remove("is-new"));
+  }, 7000);
 }
 
 function renderArchive() {
@@ -382,6 +473,7 @@ function renderMarket() {
   renderOrder();
   renderClock();
   renderTape();
+  renderDispatches();
 }
 
 function syncClock() {
@@ -405,6 +497,9 @@ function reset() {
   candleGrid.replaceChildren();
   factionSelect.value = "0";
   revealedCount = 0;
+  renderedDispatches = -1;
+  clearTimeout(dispatchFreshTimer);
+  $("dispatch-status").textContent = "";
   $("quantity").value = "1";
   $("trade-status").textContent = "";
   $("toasts").replaceChildren();

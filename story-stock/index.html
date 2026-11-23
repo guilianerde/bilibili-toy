@@ -40,6 +40,7 @@
           <span class="tape-phase" id="tape-phase"></span>
           <span class="tape-when" id="tape-when"></span>
           <strong class="tape-title" id="tape-title"></strong>
+          <span class="tape-wire" id="tape-wire" aria-hidden="true"></span>
           <span class="tape-count" id="tape-count" aria-hidden="true"></span>
           <span class="tape-next" id="tape-next"></span>
           <span class="tape-jump">看资讯 ›</span>
@@ -97,6 +98,19 @@
             <p class="archive-note" id="archive-note"></p>
             <ol class="archive-list" id="archive-list"></ol>
           </details>
+        </section>
+
+        <section class="card wire-card" aria-labelledby="dispatch-title">
+          <div class="chart-head">
+            <div>
+              <h2 id="dispatch-title">军情驿报</h2>
+              <p>主线之外的过程小事件，按《三国演义》回次陆续送达</p>
+            </div>
+            <span class="wire-count" id="dispatch-count"></span>
+          </div>
+          <p id="dispatch-empty" hidden>开盘后，驿报随军情陆续送达。</p>
+          <ol class="dispatch-list" id="dispatch-list" aria-label="已送达的驿报"></ol>
+          <p class="visually-hidden" id="dispatch-status" role="status" aria-live="polite"></p>
         </section>
 
         <section class="card chart-card kline-card" aria-labelledby="chart-title">
@@ -187,6 +201,7 @@
       <li>买卖均收取成交额的 0.5%，向上取整，最低 1 铜钱。账本按含手续费的成本显示浮动盈亏；卖出时按均价结转已实现盈亏。</li>
       <li>实时走势显示选中势力最近 60 秒的报价。K 线记录各剧情段的开、高、低、收。退市后持仓归零，并提示清零损失；历史走势仍可查看。</li>
       <li>页面顶部的事件快报显示最新军情、下一节和倒计时；点开「看资讯」会跳到剧情卡并展开事件档案。档案里的收盘价按当前选中的势力计算，未挂牌或退市后显示 —。</li>
+      <li>「军情驿报」按《三国演义》回次补入主线之间的过程小事件。每段 24 秒内均匀刊出数条，只显示已经刊出的内容；主线揭晓时，这一段尚未刊出的驿报会随剧情一并补齐。</li>
       <li>三国归晋时市场收盘，存续持仓按收盘价计入总资产。切换标签页时，市场仍按本局开盘时间推进。</li>
     </ol>
     <form method="dialog"><button class="button advance">返回交易所</button></form>
