@@ -1,23 +1,24 @@
+// color 用于走势图的多势力折线与选择标签。
 const factions = [
-  { id: "wei", mark: "魏", name: "曹氏势力" },
-  { id: "shu", mark: "蜀", name: "刘氏势力" },
-  { id: "wu", mark: "吴", name: "孙氏势力" },
-  { id: "dong", mark: "董", name: "董卓" },
-  { id: "tao", mark: "陶", name: "陶谦" },
-  { id: "zan", mark: "瓒", name: "公孙瓒" },
-  { id: "shao", mark: "绍", name: "袁绍" },
-  { id: "shu-yuan", mark: "术", name: "袁术" },
-  { id: "biao", mark: "表", name: "刘表" },
-  { id: "bu", mark: "吕", name: "吕布" },
-  { id: "jin", mark: "晋", name: "司马氏" },
+  { id: "wei", mark: "魏", name: "曹氏势力", color: "#33587a" },
+  { id: "shu", mark: "蜀", name: "刘氏势力", color: "#a63d32" },
+  { id: "wu", mark: "吴", name: "孙氏势力", color: "#2c6b4f" },
+  { id: "dong", mark: "董", name: "董卓", color: "#6e4a2b" },
+  { id: "tao", mark: "陶", name: "陶谦", color: "#b07a2c" },
+  { id: "zan", mark: "瓒", name: "公孙瓒", color: "#4b7b8c" },
+  { id: "shao", mark: "绍", name: "袁绍", color: "#8c4f18" },
+  { id: "shu-yuan", mark: "术", name: "袁术", color: "#7d4a8c" },
+  { id: "biao", mark: "表", name: "刘表", color: "#347a6a" },
+  { id: "bu", mark: "吕", name: "吕布", color: "#b5482a" },
+  { id: "jin", mark: "晋", name: "司马氏", color: "#8c4a67" },
   // 次要势力：开市报价写在 190 年诸侯会盟，之后靠 briefs 或主线 quotes 推动。
-  { id: "jiao", mark: "黄", name: "黄巾" },
-  { id: "jin-he", mark: "何", name: "何进" },
-  { id: "xiu", mark: "绣", name: "张绣" },
-  { id: "zan-yue", mark: "越", name: "公孙越" },
-  { id: "liu", mark: "繇", name: "刘繇" },
-  { id: "ma", mark: "马", name: "马腾" },
-  { id: "meng", mark: "获", name: "孟获" }
+  { id: "jiao", mark: "黄", name: "黄巾", color: "#a3921f" },
+  { id: "jin-he", mark: "何", name: "何进", color: "#6f6048" },
+  { id: "xiu", mark: "绣", name: "张绣", color: "#b03a5b" },
+  { id: "zan-yue", mark: "越", name: "公孙越", color: "#5c8a3f" },
+  { id: "liu", mark: "繇", name: "刘繇", color: "#3f5f93" },
+  { id: "ma", mark: "马", name: "马腾", color: "#8a6a20" },
+  { id: "meng", mark: "获", name: "孟获", color: "#5d4f8c" }
 ];
 
 // 军情驿报（briefs）：每条主线揭晓前的过程小事件，依《三国演义》回目补入。

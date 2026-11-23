@@ -46,27 +46,46 @@
           <span class="tape-jump">看资讯 ›</span>
         </button>
 
-        <section class="market-panel" aria-labelledby="market-title">
-          <div class="section-line">
-            <h2 id="market-title">势力行情</h2>
-            <span id="market-status">铜钱 / 股</span>
-          </div>
-          <div class="tickers" id="tickers" role="group" aria-label="选择势力"></div>
-        </section>
+        <div class="market-top">
+          <section class="card chart-card quote-card" aria-labelledby="quote-chart-title">
+            <div class="chart-head">
+              <div>
+                <h2 id="quote-chart-title">势力走势</h2>
+                <p id="quote-chart-status"></p>
+              </div>
+              <div class="quote-readout" id="quote-readout">
+                <strong id="quote-chart-price"></strong>
+                <span id="quote-chart-unit">铜钱 / 股</span>
+              </div>
+            </div>
+            <div class="quote-scope" role="group" aria-label="走势时间范围">
+              <button type="button" class="scope-button" data-scope="live" aria-pressed="false">实时</button>
+              <button type="button" class="scope-button" data-scope="5" aria-pressed="false">近 5 年</button>
+              <button type="button" class="scope-button" data-scope="10" aria-pressed="false">近 10 年</button>
+              <button type="button" class="scope-button" data-scope="all" aria-pressed="true">全部</button>
+            </div>
+            <p id="quote-chart-empty" hidden>挂牌后开始记录行情。</p>
+            <canvas id="quote-line" role="img"></canvas>
+            <div class="quote-pick">
+              <div class="quote-pick-head">
+                <span class="quote-pick-label" aria-hidden="true">图上势力</span>
+                <span class="quote-pick-actions">
+                  <button type="button" class="pick-all" id="pick-all">全选</button>
+                  <button type="button" class="pick-all" id="pick-none">清空</button>
+                </span>
+              </div>
+              <div class="quote-pick-list" id="quote-pick-list" role="group" aria-label="选择要画在走势图上的势力"></div>
+            </div>
+          </section>
 
-        <section class="card chart-card quote-card" aria-labelledby="quote-chart-title">
-          <div class="chart-head">
-            <div>
-              <h2 id="quote-chart-title">实时走势</h2>
-              <p id="quote-chart-status"></p>
+          <section class="card market-panel" aria-labelledby="market-title">
+            <div class="section-line">
+              <h2 id="market-title">势力行情</h2>
+              <span id="market-status">18 家挂牌</span>
             </div>
-            <div class="quote-readout" id="quote-readout">
-              <strong id="quote-chart-price"></strong><span>铜钱 / 股</span>
-            </div>
-          </div>
-          <p id="quote-chart-empty" hidden>挂牌后开始记录分时行情。</p>
-          <canvas id="quote-line" role="img"></canvas>
-        </section>
+            <div class="tickers" id="tickers" role="group" aria-label="选择势力"></div>
+          </section>
+        </div>
 
         <section class="card story-card" aria-labelledby="story-title">
           <div class="story-head">
@@ -199,9 +218,10 @@
     <ol>
       <li>开盘后，报价每秒更新，每 24 秒公布一条军情。你可以随时按当前报价买卖整数股。</li>
       <li>买卖均收取成交额的 0.5%，向上取整，最低 1 铜钱。账本按含手续费的成本显示浮动盈亏；卖出时按均价结转已实现盈亏。</li>
-      <li>实时走势显示选中势力最近 60 秒的报价。K 线记录各剧情段的开、高、低、收。退市后持仓归零，并提示清零损失；历史走势仍可查看。</li>
+      <li>「势力走势」可以在实时、近 5 年、近 10 年和全部之间切换：实时看最近 60 秒的逐秒报价，其余按剧情年月回放，横轴从 184 年开始标出年月（月份按军情条目先后排定）。勾选多家势力会把它们的走势叠在同一张图上，此时以各家区间起点的价格等于 100 对比涨跌；只勾一家时按铜钱标价。K 线记录各剧情段的开、高、低、收。退市后持仓归零，并提示清零损失；历史走势仍可查看。</li>
       <li>页面顶部的事件快报显示最新军情、下一节和倒计时；点开「看资讯」会跳到剧情卡并展开事件档案。档案只列已经揭晓和进行中的军情，未揭晓的不会提前出现；收盘价按当前选中的势力计算，未挂牌或退市后显示 —。</li>
       <li>「军情驿报」按《三国演义》回次补入主线之间的过程小事件，不少条目会直接带动对应势力的报价，条目下方显示涨跌。每段 24 秒内均匀刊出数条，只显示已经刊出的内容。</li>
+      <li>「势力行情」在宽屏时收在实时走势右侧的窄栏里，可上下滚动；窄屏时变为走势下方的横向名单，左右滑动挑选。点选或切换势力都会让对应行进入视野。</li>
       <li>全市场收盘时，存续持仓按收盘价计入总资产。切换标签页时，市场仍按本局开盘时间推进。</li>
     </ol>
     <form method="dialog"><button class="button advance">返回交易所</button></form>

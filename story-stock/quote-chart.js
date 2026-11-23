@@ -1,12 +1,17 @@
-function quoteTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  return minutes + ":" + String(seconds % 60).padStart(2, "0");
+// 多势力走势图：坐标与标签由 game.js 按「实时 / 近5年 / 近10年 / 全部」算好。
+function niceScale(low, high) {
+  const span = high - low || 1;
+  const rough = span / 4;
+  const power = 10 ** Math.floor(Math.log10(rough));
+  const fraction = rough / power;
+  const step = (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * power;
+  return { step, floor: Math.floor(low / step) * step, ceiling: Math.ceil(high / step) * step };
 }
 
-function drawQuoteLine(canvas, quotes) {
+function drawSeriesChart(canvas, chart, highlight = null) {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
-  if (!width || !height || !quotes.length) return;
+  if (!width || !height || !chart?.series.length) return;
   const context = canvas.getContext("2d");
   if (!context) return;
 
@@ -20,21 +25,25 @@ function drawQuoteLine(canvas, quotes) {
 
   const styles = getComputedStyle(canvas);
   const color = (name) => styles.getPropertyValue(name).trim();
-  const left = 16;
-  const right = width - 32;
-  const top = 9;
+  const left = 14;
+  const right = width - 36;
+  const top = 10;
   const bottom = height - 24;
-  const start = quotes[0].tick;
-  const last = quotes.at(-1);
-  const duration = Math.max(15, last.tick - start);
-  const prices = quotes.map(({ price }) => price);
-  const low = Math.min(...prices);
-  const high = Math.max(...prices);
-  const step = Math.max(1, Math.ceil((high - low) / 3));
-  const floor = Math.max(0, low - step);
-  const intervals = Math.max(3, Math.ceil((high + step - floor) / step));
-  const x = (tick) => left + (tick - start) / duration * (right - left);
-  const y = (price) => bottom - (price - floor) / (intervals * step) * (bottom - top);
+  const xMin = chart.xMin;
+  const xMax = Math.max(chart.xMax, xMin + 0.0001);
+  const x = (value) => left + (value - xMin) / (xMax - xMin) * (right - left);
+
+  const values = chart.series.flatMap((series) => series.points.map((point) => point.y));
+  if (!values.length) return;
+  let low = Math.min(...values);
+  let high = Math.max(...values);
+  if (low === high) {
+    const padding = Math.max(1, Math.abs(low) * 0.1);
+    low = Math.max(0, low - padding);
+    high += padding;
+  }
+  const { step, floor, ceiling } = niceScale(low, high);
+  const y = (value) => bottom - (value - floor) / (ceiling - floor) * (bottom - top);
 
   context.strokeStyle = color("--line");
   context.fillStyle = color("--muted");
@@ -42,41 +51,58 @@ function drawQuoteLine(canvas, quotes) {
   context.textAlign = "left";
   context.textBaseline = "middle";
   context.lineWidth = 1;
-  for (let index = 0; index <= intervals; index += 1) {
-    const price = floor + index * step;
-    const position = y(price);
+  for (let value = floor; value <= ceiling + step / 2; value += step) {
+    const position = y(value);
     context.beginPath();
     context.moveTo(left, position);
     context.lineTo(right, position);
     context.stroke();
-    context.fillText(price, right + 7, position);
-  }
-  context.textAlign = "center";
-  const timeIntervals = width < 360 ? 3 : 4;
-  for (let index = 0; index <= timeIntervals; index += 1) {
-    const tick = start + Math.round(duration * index / timeIntervals);
-    context.fillText(quoteTime(tick), x(tick), height - 9);
+    context.fillText(chart.yLabel(Math.round(value)), right + 7, position);
   }
 
-  const line = new Path2D();
-  line.moveTo(x(start), y(quotes[0].price));
-  for (const { tick, price } of quotes.slice(1)) line.lineTo(x(tick), y(price));
-  const area = new Path2D(line);
-  area.lineTo(x(last.tick), bottom);
-  area.lineTo(x(start), bottom);
-  area.closePath();
-  const gradient = context.createLinearGradient(0, top, 0, bottom);
-  gradient.addColorStop(0, color("--quote-fill"));
-  gradient.addColorStop(1, "transparent");
-  context.fillStyle = gradient;
-  context.fill(area);
+  const labels = chart.xLabels ?? [];
+  labels.forEach((item, index) => {
+    context.textAlign = index === 0 ? "left" : index === labels.length - 1 ? "right" : "center";
+    context.fillText(item.label, x(item.x), height - 9);
+  });
+  context.textAlign = "left";
 
-  context.strokeStyle = color("--quote-line");
-  context.lineWidth = 2;
-  context.lineJoin = "round";
-  context.stroke(line);
-  context.beginPath();
-  context.arc(x(last.tick), y(last.price), 3, 0, Math.PI * 2);
-  context.fillStyle = context.strokeStyle;
-  context.fill();
+  // 选中的交易势力画在最上层；悬停的那一家再叠上去；多线时不填色，避免互相遮挡。
+  // 高亮的势力可能在这一屏没有线（区间内无报价），此时不要误把其他线全部调暗。
+  const activeHighlight = chart.series.some((series) => series.index === highlight) ? highlight : null;
+  const order = (series) => Number(series.active) + (series.index === activeHighlight ? 2 : 0);
+  const ordered = chart.series.slice().sort((a, b) => order(a) - order(b));
+  const fill = chart.series.length === 1;
+  for (const series of ordered) {
+    const points = series.points;
+    if (!points.length) continue;
+    const dimmed = activeHighlight !== null && series.index !== activeHighlight;
+    const line = new Path2D();
+    line.moveTo(x(points[0].x), y(points[0].y));
+    for (const point of points.slice(1)) line.lineTo(x(point.x), y(point.y));
+    if (fill) {
+      const area = new Path2D(line);
+      area.lineTo(x(points.at(-1).x), bottom);
+      area.lineTo(x(points[0].x), bottom);
+      area.closePath();
+      context.globalAlpha = 0.14;
+      context.fillStyle = series.color;
+      context.fill(area);
+      context.globalAlpha = 1;
+    }
+    context.globalAlpha = dimmed ? 0.18 : 1;
+    context.strokeStyle = series.color;
+    context.lineWidth = series.index === activeHighlight ? 2.8 :
+      series.active ? 2.6 : chart.series.length > 1 ? 1.6 : 2.2;
+    context.lineJoin = "round";
+    context.stroke(line);
+    if (!dimmed) {
+      const last = points.at(-1);
+      context.beginPath();
+      context.arc(x(last.x), y(last.y), series.active || series.index === activeHighlight ? 3.2 : 2.2, 0, Math.PI * 2);
+      context.fillStyle = series.color;
+      context.fill();
+    }
+  }
+  context.globalAlpha = 1;
 }

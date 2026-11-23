@@ -39,6 +39,16 @@ function briefAt(tick) {
   return { eventIndex, briefIndex, event, key: eventIndex + ":" + briefIndex };
 }
 
+// 每次主线或带报价的驿报揭晓时，记下全市场当时的报价，供走势图按故事年月回放。
+function recordTimeline(market, year, prices) {
+  const slot = (market.monthCounts.get(year) ?? 0) + 1;
+  market.monthCounts.set(year, slot);
+  market.timeline.push({
+    year, slot,
+    prices: prices ?? new Map(market.stocks.map((stock) => [stock.faction.id, currentPrice(stock)]))
+  });
+}
+
 function createMarket() {
   const stocks = factions.map((faction) => {
     const stock = { faction, anchor: null, candles: [], quoteHistory: [], shares: 0, cost: 0 };
@@ -52,10 +62,17 @@ function createMarket() {
     return stock;
   });
 
-  return {
+  const market = {
     stocks, tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, realized: 0,
-    news: [], briefImpacts: new Map()
+    news: [], briefImpacts: new Map(), timeline: [], monthCounts: new Map()
   };
+  // 开市前的 184/189/190 三次报价也要进历史走势。
+  const prices = new Map(factions.map((faction) => [faction.id, null]));
+  for (const event of prologue) {
+    for (const [id, price] of Object.entries(event.quotes)) prices.set(id, price);
+    recordTimeline(market, event.year, new Map(prices));
+  }
+  return market;
 }
 
 function assetValue(market) {
@@ -103,6 +120,8 @@ function advanceMarket(market, targetTick, random = Math.random) {
       stock.quoteHistory.push({ tick: market.tick, price: nextPrice });
       if (stock.quoteHistory.length > quoteWindow + 1) stock.quoteHistory.shift();
     }
+    if (event) recordTimeline(market, event.year);
+    else if (brief && briefQuotes) recordTimeline(market, brief.event.briefs[brief.briefIndex].year);
     market.peak = Math.max(market.peak, assetValue(market));
   }
 }

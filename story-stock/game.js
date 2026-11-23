@@ -19,6 +19,10 @@ let displayedPrice;
 let revealedCount = 0;
 let renderedDispatches = -1;
 let dispatchFreshTimer;
+let chartScope = "all";
+let chartFactions = new Set([0]);
+let chartConfig = null;
+let chartHighlight = null;
 
 const tickers = factions.map((faction, index) => {
   const button = document.createElement("button");
@@ -46,6 +50,69 @@ factionSelect.innerHTML = factions.map((faction, index) =>
   `<option value="${index}">${faction.name}</option>`).join("");
 factionSelect.value = "0";
 
+const pickList = $("quote-pick-list");
+const picks = factions.map((faction, index) => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "pick";
+  button.dataset.index = String(index);
+  button.style.setProperty("--pick", faction.color || "#766044");
+  button.innerHTML = `<span class="pick-mark" aria-hidden="true">${faction.mark}</span>${faction.name}`;
+  button.addEventListener("click", () => togglePick(index));
+  bindHighlight(button, index);
+  pickList.append(button);
+  return button;
+});
+
+function togglePick(index) {
+  if (chartFactions.has(index)) {
+    chartFactions.delete(index);
+    if (chartHighlight === index) chartHighlight = null;
+  } else {
+    chartFactions.add(index);
+  }
+  renderQuoteChart();
+}
+
+function setPicks(indices) {
+  chartFactions = new Set(indices);
+  chartHighlight = null;
+  renderQuoteChart();
+}
+
+// 悬停或聚焦某个名字时，只把那一家的线和图例点亮，18 家同屏也分得清。
+function setHighlight(index) {
+  const next = index !== null && chartFactions.has(index) &&
+    chartConfig?.series.some((series) => series.index === index) ? index : null;
+  if (next === chartHighlight) return;
+  chartHighlight = next;
+  renderPicks();
+  drawQuoteChart();
+}
+
+function bindHighlight(element, index) {
+  element.addEventListener("pointerenter", () => setHighlight(index));
+  element.addEventListener("pointerleave", () => setHighlight(null));
+  element.addEventListener("focus", () => setHighlight(index));
+  element.addEventListener("blur", () => setHighlight(null));
+}
+
+const scopeButtons = [...document.querySelectorAll(".scope-button")];
+function renderScope() {
+  for (const button of scopeButtons) {
+    button.setAttribute("aria-pressed", String(button.dataset.scope === chartScope));
+  }
+}
+for (const button of scopeButtons) {
+  button.addEventListener("click", () => {
+    chartScope = button.dataset.scope;
+    renderScope();
+    renderQuoteChart();
+  });
+}
+$("pick-all").addEventListener("click", () => setPicks(factions.map((_, index) => index)));
+$("pick-none").addEventListener("click", () => setPicks([]));
+
 function selectFaction(index) {
   if (index === selected) return;
   selected = index;
@@ -53,7 +120,13 @@ function selectFaction(index) {
   candleGrid.replaceChildren();
   $("trade-status").textContent = "";
   factionSelect.value = String(index);
+  // 图上只有一家时跟着交易选择走；已经在对比多家时不打断用户的搭配。
+  if (chartFactions.size <= 1) {
+    chartFactions = new Set([index]);
+    chartHighlight = null;
+  }
   renderTickers();
+  revealTicker(index);
   renderLiveStatus();
   renderQuoteChart();
   renderChart();
@@ -63,6 +136,25 @@ function selectFaction(index) {
 
 function finished() {
   return market.tick === totalTicks;
+}
+
+// In the desktop side rail the roster scrolls; keep the picked faction in view.
+function revealTicker(index) {
+  const button = tickers[index];
+  if (!button) return;
+  const list = button.parentElement;
+  if (list.scrollHeight > list.clientHeight + 1) {
+    const top = button.offsetTop - list.offsetTop;
+    const bottom = top + button.offsetHeight;
+    if (top < list.scrollTop) list.scrollTop = top;
+    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+  }
+  if (list.scrollWidth > list.clientWidth + 1) {
+    const left = button.offsetLeft - list.offsetLeft;
+    const right = left + button.offsetWidth;
+    if (left < list.scrollLeft) list.scrollLeft = left;
+    else if (right > list.scrollLeft + list.clientWidth) list.scrollLeft = right - list.clientWidth;
+  }
 }
 
 function renderTickers() {
@@ -81,7 +173,7 @@ function renderTickers() {
     badge.textContent = price > 0 ? percent(change) : priceStatus(price);
   });
   if (factionSelect.value !== String(selected)) factionSelect.value = String(selected);
-  $("market-status").textContent = "铜钱 / 股 · " + (finished() ? "已收盘" : active + " 家已挂牌");
+  $("market-status").textContent = finished() ? "已收盘" : active + " 家挂牌";
 }
 
 function renderLiveStatus() {
@@ -265,26 +357,210 @@ function renderLedger() {
   if ($("positions").innerHTML !== positions) $("positions").innerHTML = positions;
 }
 
+function tickStoryDate(tick) {
+  const index = Math.min(story.length - 1, Math.max(0, Math.floor(tick / ticksPerEvent)));
+  const year = story[index].year;
+  const elapsed = tick % ticksPerEvent;
+  return { year, month: Math.min(12, Math.max(1, Math.ceil(elapsed / 2))) };
+}
+
+// 当前剧情年份：待揭晓时用下一节的年份，收盘后用最后一节。
+function currentStoryYear() {
+  if (finished()) return story.at(-1).year;
+  return story[Math.min(Math.floor(market.tick / ticksPerEvent), story.length - 1)].year;
+}
+
+function dateLabel(year, month) {
+  return year + "-" + String(month).padStart(2, "0");
+}
+
+function xDate(value) {
+  const year = Math.floor(value + 1e-9);
+  return { year, month: Math.min(12, Math.max(1, Math.round((value - year) * 12) + 1)) };
+}
+
+// 画布隐藏时 clientWidth 为 0，用卡片内容宽度估算标签数量，避免显示/隐藏来回触发重排。
+function chartWidth() {
+  return quoteLine.clientWidth || Math.max(240, (quoteLine.parentElement?.clientWidth ?? 512) - 32);
+}
+
+function chartLabels(xMin, xMax) {
+  const slots = chartWidth() < 380 ? 3 : 4;
+  return Array.from({ length: slots + 1 }, (_, index) => {
+    const x = index === slots ? xMax : xMin + (xMax - xMin) * index / slots;
+    const { year, month } = xDate(x);
+    return { x, label: dateLabel(year, month) };
+  });
+}
+
+function tickLabels(start, end) {
+  const slots = chartWidth() < 380 ? 3 : 4;
+  return Array.from({ length: slots + 1 }, (_, index) => {
+    const tick = Math.round(start + (end - start) * index / slots);
+    const { year, month } = tickStoryDate(tick);
+    return { x: tick, label: dateLabel(year, month) };
+  });
+}
+
+function chartSeries(stocks) {
+  // 指定了要画的势力却全都画不出来（例如区间内无报价）时，返回空配置而不是 null：
+  // 标题/状态保持可见，同时不反复显隐画布。
+  const empty = { series: [], xMin: 0, xMax: 1, normalize: false, xLabels: [], yLabel: format,
+    fromLabel: "", toLabel: "", skipped: stocks.length };
+  if (chartScope === "live") {
+    const entries = stocks.flatMap((stock) => {
+      const quotes = stock.quoteHistory;
+      if (!quotes.length) return [];
+      const base = quotes.find(({ price }) => price > 0)?.price;
+      return base ? [{ stock, quotes, base }] : [];
+    });
+    if (!entries.length) return empty;
+    const start = Math.min(...entries.map(({ quotes }) => quotes[0].tick));
+    const last = Math.max(...entries.map(({ quotes }) => quotes.at(-1).tick));
+    const end = Math.min(totalTicks, Math.max(start + 15, last));
+    const normalize = entries.length > 1;
+    const from = tickStoryDate(start);
+    const to = tickStoryDate(end);
+    return {
+      series: entries.map(({ stock, quotes, base }) => ({
+        name: stock.faction.name,
+        color: stock.faction.color || "#3c6070",
+        index: factions.indexOf(stock.faction),
+        active: stock.faction === market.stocks[selected].faction,
+        points: quotes.map(({ tick, price }) => ({
+          x: tick, y: normalize ? price / base * 100 : price, price
+        }))
+      })),
+      xMin: start, xMax: end, normalize,
+      xLabels: tickLabels(start, end),
+      yLabel: normalize ? (value) => String(value) : format,
+      fromLabel: dateLabel(from.year, from.month),
+      toLabel: dateLabel(to.year, to.month),
+      skipped: stocks.length - entries.length
+    };
+  }
+
+  const years = chartScope === "5" ? 5 : chartScope === "10" ? 10 : null;
+  const currentYear = currentStoryYear();
+  const earliest = market.timeline[0]?.year ?? 184;
+  const startYear = years === null ? earliest : Math.max(earliest, currentYear - years + 1);
+  const xMin = startYear;
+
+  // 同一年里的第几条军情：不超过 12 条时按月排，超过 12 条时把整年均匀铺开，避免全挤在 12 月。
+  const yearSlots = new Map();
+  for (const beat of market.timeline) yearSlots.set(beat.year, (yearSlots.get(beat.year) ?? 0) + 1);
+  const beatX = (beat) => {
+    const count = yearSlots.get(beat.year) ?? 1;
+    const month = count <= 12 ? beat.slot : 1 + (beat.slot - 1) * 11 / (count - 1);
+    return beat.year + (month - 1) / 12;
+  };
+
+  const lastBeat = market.timeline.at(-1);
+  const lastBeatX = lastBeat ? beatX(lastBeat) : xMin;
+  const nowDate = finished() ? null : tickStoryDate(market.tick);
+  const nowX = nowDate ? nowDate.year + (nowDate.month - 1) / 12 : lastBeatX;
+  const xMax = Math.max(xMin, nowX, lastBeatX);
+  const entries = stocks.flatMap((stock) => {
+    const faction = stock.faction;
+    const points = [];
+    let carry = null;
+    for (const beat of market.timeline) {
+      const price = beat.prices.get(faction.id);
+      if (price === null || price === undefined) continue;
+      const x = beatX(beat);
+      if (x < xMin) carry = { x: xMin, price };
+      else points.push({ x, price });
+    }
+    // 当前价落在“现在”这个月，而不是提前画到年末。
+    if (!finished()) {
+      const price = currentPrice(stock);
+      if (price !== null) points.push({ x: nowX, price });
+    }
+    if (carry) points.unshift(carry);
+    const base = points.find(({ price }) => price > 0)?.price;
+    return base ? [{ stock, points, base }] : [];
+  });
+  if (!entries.length) return empty;
+  const normalize = entries.length > 1;
+  const end = xDate(xMax);
+  return {
+    series: entries.map(({ stock, points, base }) => ({
+      name: stock.faction.name,
+      color: stock.faction.color || "#3c6070",
+      index: factions.indexOf(stock.faction),
+      active: stock.faction === market.stocks[selected].faction,
+      points: points.map(({ x, price }) => ({
+        x, y: normalize ? price / base * 100 : price, price
+      }))
+    })),
+    xMin, xMax, normalize,
+    xLabels: chartLabels(xMin, xMax),
+    yLabel: normalize ? (value) => String(value) : format,
+    fromLabel: dateLabel(startYear, 1),
+    toLabel: dateLabel(end.year, end.month),
+    skipped: stocks.length - entries.length
+  };
+}
+
+function renderPicks() {
+  picks.forEach((button, index) => {
+    const price = currentPrice(market.stocks[index]);
+    const label = price === null ? "未挂牌" : price === 0 ? "已退市" : format(price) + " 铜钱 / 股";
+    button.setAttribute("aria-pressed", String(chartFactions.has(index)));
+    button.classList.toggle("is-highlight", chartHighlight === index);
+    button.classList.toggle("is-muted", chartHighlight !== null && chartHighlight !== index);
+    button.dataset.status = price > 0 ? "listed" : price === 0 ? "delisted" : "pending";
+    button.title = factions[index].name + " · " + label;
+  });
+  $("pick-all").disabled = chartFactions.size === factions.length;
+  $("pick-none").disabled = chartFactions.size === 0;
+}
+
+function drawQuoteChart() {
+  if (chartConfig) drawSeriesChart(quoteLine, chartConfig, chartHighlight);
+}
+
 function renderQuoteChart() {
-  const { faction, quoteHistory } = market.stocks[selected];
-  const last = quoteHistory.at(-1);
-  $("quote-chart-title").textContent = faction.name + " · 实时走势";
-  $("quote-chart-empty").hidden = Boolean(last);
-  $("quote-readout").hidden = !last;
-  quoteLine.hidden = !last;
-  if (!last) {
-    $("quote-chart-status").textContent = "待挂牌";
+  const stocks = [...chartFactions].sort((a, b) => a - b).map((index) => market.stocks[index]);
+  const config = chartSeries(stocks);
+  const hasSeries = config.series.length > 0;
+  // 高亮的势力如果在这一屏没有线（例如已退市、区间内无报价），就当作没有高亮。
+  if (chartHighlight !== null && !config.series.some((series) => series.index === chartHighlight)) {
+    chartHighlight = null;
+  }
+  renderPicks();
+  const quoted = market.stocks[selected].quoteHistory.at(-1);
+  $("quote-readout").hidden = !quoted;
+  $("quote-chart-price").textContent = quoted ? format(quoted.price) : "";
+  if ($("quote-chart-empty").hidden !== hasSeries) $("quote-chart-empty").hidden = hasSeries;
+  if (quoteLine.hidden !== !hasSeries) quoteLine.hidden = !hasSeries;
+  chartConfig = hasSeries ? config : null;
+
+  const scope = chartScope === "live" ? "近 60 秒" :
+    chartScope === "5" ? "近 5 年" : chartScope === "10" ? "近 10 年" : "全部";
+  if (!hasSeries) {
+    $("quote-chart-title").textContent = "势力走势";
+    $("quote-chart-status").textContent = stocks.length ? scope + " · 该区间暂无行情" : "未选择势力";
+    $("quote-chart-empty").textContent = stocks.length
+      ? "所选势力在该区间内尚无行情。"
+      : "勾选下方势力，把它们的走势叠到同一张图上。";
     return;
   }
 
-  const status = last.price === 0 ? "已退市" : finished() ? "已收盘" : openedAt === null ? "待开盘" : "每秒更新";
-  $("quote-chart-status").textContent = "近 " + quoteWindow + " 秒 · " + status;
-  $("quote-chart-price").textContent = format(last.price);
-  const from = quoteTime(quoteHistory[0].tick);
-  const to = quoteTime(last.tick);
-  quoteLine.setAttribute("aria-label", faction.name + "报价折线，本局 " + from + " 至 " + to +
-    "，最新报价 " + coins(last.price));
-  drawQuoteLine(quoteLine, quoteHistory);
+  const count = config.series.length;
+  $("quote-chart-title").textContent = chartScope === "live"
+    ? (count === 1 ? config.series[0].name + " · 实时走势" : "实时走势 · " + count + " 家")
+    : (count === 1 ? config.series[0].name + " · 历史走势" : "历史走势 · " + count + " 家");
+  const parts = [scope, config.fromLabel + " 至 " + config.toLabel];
+  if (config.normalize) parts.push("起点 100");
+  if (config.skipped > 0) parts.push(config.skipped + " 家区间内无行情");
+  if (finished()) parts.push("已收盘");
+  else if (openedAt === null) parts.push("待开盘");
+  const status = parts.join(" · ");
+  $("quote-chart-status").textContent = status;
+  quoteLine.setAttribute("aria-label",
+    status + "；" + config.series.map((series) => series.name).join("、"));
+  drawQuoteChart();
 }
 
 function renderChartDetail() {
@@ -314,9 +590,12 @@ function renderChart() {
     return;
   }
 
+  // 势力的第一家可能由驿报挂牌（没有开市前的 K 线），所以只拿带事件的蜡烛来定年份范围。
   const last = candles.at(-1);
-  const from = candles[0].event.year;
-  const to = (last.event ?? candles.at(-2).event).year;
+  const dated = candles.filter((candle) => candle.event);
+  const currentDate = tickStoryDate(market.tick);
+  const from = dated[0]?.event.year ?? currentDate.year;
+  const to = (last.event ?? dated.at(-1)?.event)?.year ?? currentDate.year;
   const years = from === to ? String(from) : from + "–" + to;
   const upcoming = story.find((event, index) =>
     index >= Math.floor(market.tick / ticksPerEvent) && event.quotes[faction.id] !== undefined);
@@ -537,6 +816,10 @@ function reset() {
   factionSelect.value = "0";
   revealedCount = 0;
   renderedDispatches = -1;
+  chartFactions = new Set([0]);
+  chartScope = "all";
+  chartHighlight = null;
+  renderScope();
   clearTimeout(dispatchFreshTimer);
   $("dispatch-status").textContent = "";
   $("quantity").value = "1";
@@ -626,4 +909,8 @@ $("archive").addEventListener("toggle", () => {
 document.addEventListener("visibilitychange", syncClock);
 $("help-open").addEventListener("click", () => $("help-dialog").showModal());
 reset();
-new ResizeObserver(() => drawQuoteLine(quoteLine, market.stocks[selected].quoteHistory)).observe(quoteLine);
+let quoteResizeFrame = 0;
+new ResizeObserver(() => {
+  cancelAnimationFrame(quoteResizeFrame);
+  quoteResizeFrame = requestAnimationFrame(renderQuoteChart);
+}).observe(quoteLine);
