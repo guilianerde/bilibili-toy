@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101310">
+<title>弹幕侦探｜停电前的 10 秒</title>
+<style>
+:root {
+  color-scheme: dark;
+  --ink: #e9e8db;
+  --dim: #a9ad9c;
+  --ground: #101310;
+  --panel: #191e17;
+  --line: #353b2f;
+  --amber: #f4ce79;
+  --green: #b9d7ad;
+  --red: #ffac99;
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-width: 280px; color: var(--ink); background: var(--ground); line-height: 1.55; }
+button { min-height: 44px; color: inherit; font: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; }
+button:disabled { cursor: default; opacity: .46; }
+header { border-bottom: 1px solid var(--line); }
+.bar, main { width: min(100% - 32px, 1080px); margin-inline: auto; }
+.bar { display: flex; align-items: center; justify-content: space-between; min-height: 64px; gap: 12px; }
+.brand { font-weight: 750; letter-spacing: .1em; }
+.brand::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 10px; border: 2px solid var(--amber); transform: rotate(45deg); }
+.mono, .eyebrow { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-variant-numeric: tabular-nums; }
+.eyebrow { margin: 0; color: var(--amber); font-size: .83rem; letter-spacing: .09em; }
+.bar .mono { font-size: .78rem; color: var(--dim); text-align: right; }
+main { padding-top: clamp(24px, 5vw, 52px); padding-bottom: max(36px, env(safe-area-inset-bottom)); }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: 10px; font-size: clamp(2rem, 5.7vw, 4.2rem); line-height: 1.14; letter-spacing: -.065em; }
+h2 { margin-bottom: 8px; font-size: 1.22rem; }
+.lede { margin-bottom: 24px; color: var(--dim); }
+.case-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); align-items: start; gap: 16px; }
+.panel { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.monitor { overflow: hidden; }
+.monitor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; font-size: .84rem; color: var(--dim); }
+.monitor-head time { color: var(--amber); font-size: .95rem; }
+.scene { height: clamp(158px, 28vw, 268px); position: relative; overflow: hidden; isolation: isolate; background: #202719; }
+.scene::after { content: ""; position: absolute; z-index: 3; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, #0002 0 1px, transparent 2px 4px), radial-gradient(ellipse at 50% 50%, transparent 28%, #080b08b0 100%); }
+.art { position: absolute; inset: 0; }
+.back-wall { position: absolute; inset: 20% 35% 26%; background: linear-gradient(100deg, #555d41, #303824 75%); box-shadow: 0 0 50px #d2d68f23; }
+.left-wall, .right-wall, .ceiling, .floor { position: absolute; inset: 0; }
+.left-wall { clip-path: polygon(0 0, 35% 20%, 35% 74%, 0 100%); background: linear-gradient(90deg, #242b20, #46503a 50%); }
+.right-wall { clip-path: polygon(100% 0, 65% 20%, 65% 74%, 100% 100%); background: linear-gradient(270deg, #252c22, #50583d 50%); }
+.ceiling { clip-path: polygon(0 0, 100% 0, 65% 20%, 35% 20%); background: #333c2a; }
+.floor { clip-path: polygon(0 100%, 35% 74%, 65% 74%, 100% 100%); background: linear-gradient(#394431 71%, #242b20); }
+.door { position: absolute; inset: 29% 42% 26%; background: #23291e; border: 2px solid #646c4c; }
+.door::after { content: ""; position: absolute; top: 51%; right: 12%; width: 4px; height: 4px; background: var(--amber); }
+.light { position: absolute; top: 11%; left: 38%; width: 24%; height: 4%; background: #e4dfa0; box-shadow: 0 0 26px 6px #e5dea272; }
+.sensor { position: absolute; right: 22%; top: 42%; width: 8px; height: 14px; border: 1px solid #99946b; background: #25281f; box-shadow: 0 0 8px #d0b67755; }
+.scene[data-camera="log"] { background: radial-gradient(ellipse, #344330, #1b2319); }
+.scene[data-camera="floor"] { background: linear-gradient(#282f28 75%, #212622 75%); }
+.log-art, .stage-art { display: none; }
+.scene[data-camera="log"] .hall-art, .scene[data-camera="floor"] .hall-art { display: none; }
+.scene[data-camera="log"] .log-art, .scene[data-camera="floor"] .stage-art { display: block; }
+.cabinet { position: absolute; inset: 12% 19% 11%; display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; justify-items: center; border: 3px solid #656954; border-radius: 4px; background: repeating-linear-gradient(0deg, #31382b 0 27%, #272d24 28% 31%); }
+.switch { width: 32%; height: 41%; border: 2px solid #9c9e77; background: linear-gradient(#555c46 50%, #c1bf89 50% 57%, #282d25 57%); box-shadow: 3px 4px #171c16; }
+.switch:nth-child(2) { transform: rotate(180deg); background: linear-gradient(#515746 50%, #ecb560 50% 57%, #2a2e25 57%); }
+.stage-screen { position: absolute; inset: 18% 18% 30%; border: 5px solid #5f6758; background: #141914; }
+.stage-lamp { position: absolute; top: 30%; right: 8%; width: 7px; height: 7px; border-radius: 50%; background: #ecc978; box-shadow: 0 0 20px 5px #edbc6570; }
+.figure { position: absolute; left: 32%; bottom: 21%; width: 18px; height: 27%; border-radius: 8px 8px 2px 2px; background: #6d755e; }
+.figure::before { content: ""; position: absolute; bottom: 100%; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #8e8d6f; }
+.figure::after { content: ""; position: absolute; top: 18%; left: 12px; width: 24px; height: 16px; border: 1px solid #a4a394; transform: rotate(-12deg); background: repeating-linear-gradient(0deg, #9c9c85 0 2px, #343a2e 3px 5px); }
+.scene-note { position: absolute; inset: auto 12px 12px auto; z-index: 4; border: 1px solid #c1c0a26b; background: #151a13e8; color: #e9e8db; padding: 4px 8px; font-size: .8rem; }
+.details { padding: 13px 14px 14px; min-height: 140px; }
+.details .eyebrow { margin-bottom: 6px; }
+.quote { margin-bottom: 8px; color: var(--ink); font-weight: 650; overflow-wrap: anywhere; }
+.fact { margin: 0; color: var(--dim); font-size: .94rem; overflow-wrap: anywhere; }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.controls button { border: 0; border-right: 1px solid var(--line); background: none; padding: 7px 3px; font-size: .88rem; }
+.controls button:last-child { border-right: 0; }
+.controls button[aria-pressed="true"] { background: #2f2d1e; color: var(--amber); box-shadow: inset 0 -2px var(--amber); }
+.advance { padding: 10px 14px 14px; }
+.dossier { padding: 14px; }
+.dossier p { margin-bottom: 12px; color: var(--dim); }
+.dossier ul { list-style: none; padding: 0; margin: 0 0 14px; }
+.dossier li { padding: 9px 0; border-top: 1px solid var(--line); color: var(--dim); font-size: .94rem; }
+.dossier strong { display: inline-block; min-width: 3.3em; color: var(--ink); }
+.primary { width: 100%; padding: 9px 14px; border: 1px solid transparent; border-radius: 7px; background: var(--amber); color: #211a0d; font-weight: 750; }
+.primary:hover:not(:disabled) { background: #ffe0a0; }
+.stage { margin-top: 16px; padding: 16px; }
+.stage:focus { outline: none; }
+.stage > p { color: var(--dim); }
+.claims { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+fieldset { min-width: 0; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+legend { padding: 0 5px; color: var(--amber); font-size: .9rem; }
+.choice { display: flex; align-items: center; min-height: 44px; gap: 9px; padding: 4px 6px; border-radius: 6px; cursor: pointer; font-size: .94rem; }
+.choice:has(:checked) { background: #343020; }
+input { accent-color: var(--amber); }
+.stage .primary { width: auto; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#result[data-outcome="solved"] h2 { color: var(--green); }
+#result[data-outcome="missed"] h2 { color: var(--red); }
+@media (max-width: 690px) {
+  .case-grid, .claims { grid-template-columns: 1fr; }
+  .bar { min-height: 48px; }
+  .lede { margin-bottom: 16px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar"><span class="brand">弹幕侦探</span><span class="mono">案件回放</span></div>
+</header>
+<main>
+  <p class="eyebrow">北楼直播间</p>
+  <h1>停电前的 10 秒</h1>
+  <p class="lede">直播间突然停电。先看 3 条线索，再选出关电的人和证据。</p>
+  <div class="case-grid">
+    <section class="monitor panel" aria-label="现场记录">
+      <div class="monitor-head"><span id="source"></span><time class="mono" id="timestamp"></time></div>
+      <div class="scene" aria-hidden="true" id="scene">
+        <div class="art hall-art">
+          <div class="back-wall"></div><div class="left-wall"></div><div class="right-wall"></div><div class="ceiling"></div><div class="floor"></div><div class="door"></div><div class="light"></div><div class="sensor"></div>
+        </div>
+        <div class="art log-art"><div class="cabinet"><span class="switch"></span><span class="switch"></span><span class="switch"></span></div></div>
+        <div class="art stage-art"><span class="stage-screen"></span><span class="stage-lamp"></span><span class="figure"></span></div>
+        <span class="mono scene-note" id="scene-note"></span>
+      </div>
+      <div class="details" id="record" aria-live="polite">
+        <p class="eyebrow" id="progress"></p>
+        <p class="quote" id="comment"></p>
+        <p class="fact" id="fact"></p>
+      </div>
+      <div class="controls" role="group" aria-label="切换记录">
+        <button type="button" data-record="0" aria-controls="record" aria-pressed="true">门禁画面</button>
+        <button type="button" data-record="1" aria-controls="record" aria-pressed="false">配电日志</button>
+        <button type="button" data-record="2" aria-controls="record" aria-pressed="false">舞台画面</button>
+      </div>
+      <div class="advance" id="advance">
+        <button class="primary" id="next" type="button">下一条线索：配电日志</button>
+      </div>
+    </section>
+    <aside class="dossier panel">
+      <h2>值班名单</h2>
+      <p>配电间只有一扇门，门禁使用个人工牌。三个机位的时钟已同步。</p>
+      <ul>
+        <li><strong>林默</strong> 导播 · 工牌 04</li>
+        <li><strong>阿栎</strong> 灯光 · 工牌 17</li>
+        <li><strong>小岑</strong> 场务 · 工牌 23</li>
+      </ul>
+    </aside>
+  </div>
+  <section class="stage panel" id="claim" tabindex="-1" hidden>
+    <h2>提交推理</h2>
+    <p>每题选一个答案，选完即可结案。</p>
+    <form id="verdict">
+      <div class="claims">
+        <fieldset>
+          <legend>是谁关了电源？</legend>
+          <label class="choice"><input type="radio" name="person" value="lin">林默 · 工牌 04</label>
+          <label class="choice"><input type="radio" name="person" value="li">阿栎 · 工牌 17</label>
+          <label class="choice"><input type="radio" name="person" value="cen">小岑 · 工牌 23</label>
+        </fieldset>
+        <fieldset>
+          <legend>哪条记录证明断电是手动操作？</legend>
+          <label class="choice"><input type="radio" name="proof" value="entry">读卡器刷出了工牌 17</label>
+          <label class="choice"><input type="radio" name="proof" value="switch">配电日志记录「本地手动断开」</label>
+          <label class="choice"><input type="radio" name="proof" value="stage">舞台屏幕突然熄灭</label>
+        </fieldset>
+      </div>
+      <button class="primary" id="submit" type="submit" disabled>确认结案</button>
+    </form>
+  </section>
+  <section class="stage panel" id="result" tabindex="-1" hidden>
+    <p class="eyebrow" id="score"></p>
+    <h2 id="ending"></h2>
+    <p id="solution"></p>
+    <div class="actions"><button class="primary" id="replay" type="button">重玩案件</button></div>
+  </section>
+</main>
+<script>
+const records = [
+  {
+    camera: "entry", source: "机位 A · 配电间门口", stamp: "21:59:50", note: "刷卡记录",
+    comment: "弹幕「镜头看不清脸，右边读卡器亮了。」",
+    fact: "工牌 17 刷卡进入。门禁记录显示，配电间此前无人，直到停电也没有第二次进出。"
+  },
+  {
+    camera: "log", source: "记录 B · 配电柜", stamp: "21:59:58", note: "开关事件",
+    comment: "弹幕「等等，先看看配电日志的最后一行。」",
+    fact: "事件：本地手动断开。日志来自配电柜内的实体开关，只有在柜前拨动它才会生成。"
+  },
+  {
+    camera: "floor", source: "机位 C · 直播间舞台", stamp: "22:00:00", note: "画面中断",
+    comment: "弹幕「小岑还举着场记板，背后的屏先黑了。」",
+    fact: "小岑从 21:59:50 起一直在舞台上。屏幕熄灭后，门边的电池应急灯仍亮着。"
+  }
+];
+
+const source = document.querySelector("#source");
+const timestamp = document.querySelector("#timestamp");
+const scene = document.querySelector("#scene");
+const sceneNote = document.querySelector("#scene-note");
+const progress = document.querySelector("#progress");
+const comment = document.querySelector("#comment");
+const fact = document.querySelector("#fact");
+const recordButtons = [...document.querySelectorAll("[data-record]")];
+const advance = document.querySelector("#advance");
+const nextButton = document.querySelector("#next");
+const claim = document.querySelector("#claim");
+const verdict = document.querySelector("#verdict");
+const submit = document.querySelector("#submit");
+const result = document.querySelector("#result");
+let activeRecord = 0;
+
+function showRecord(index) {
+  const record = records[index];
+  activeRecord = index;
+  progress.textContent = "线索 " + (index + 1) + " / " + records.length;
+  source.textContent = record.source;
+  timestamp.dateTime = record.stamp;
+  timestamp.textContent = record.stamp;
+  scene.dataset.camera = record.camera;
+  sceneNote.textContent = record.note;
+  comment.textContent = record.comment;
+  fact.textContent = record.fact;
+  recordButtons.forEach((button, position) => {
+    button.setAttribute("aria-pressed", String(position === index));
+  });
+  const nextRecord = recordButtons[index + 1];
+  nextButton.textContent = nextRecord ? "下一条线索：" + nextRecord.textContent : "开始推理";
+}
+
+recordButtons.forEach((button, index) => {
+  button.addEventListener("click", () => showRecord(index));
+});
+
+nextButton.addEventListener("click", () => {
+  if (activeRecord + 1 < records.length) {
+    showRecord(activeRecord + 1);
+    return;
+  }
+  claim.hidden = false;
+  claim.focus();
+});
+
+verdict.addEventListener("change", () => {
+  const answers = new FormData(verdict);
+  submit.disabled = !answers.has("person") || !answers.has("proof");
+});
+
+verdict.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const answers = new FormData(verdict);
+  if (!answers.has("person") || !answers.has("proof")) return;
+
+  const score = Number(answers.get("person") === "li") + Number(answers.get("proof") === "switch");
+  result.dataset.outcome = score === 2 ? "solved" : "missed";
+  document.querySelector("#score").textContent = "推理得分 " + score + " / 2";
+  document.querySelector("#ending").textContent = score === 2 ? "案件告破" : "推理复盘";
+  document.querySelector("#solution").textContent =
+    "阿栎关了总电源。21:59:50，阿栎的 17 号工牌刷入配电间，他是当时唯一在里面的人。八秒后，柜内开关记下「本地手动断开」。两秒后，舞台画面中断。";
+  claim.hidden = true;
+  advance.hidden = true;
+  result.hidden = false;
+  result.focus();
+});
+
+document.querySelector("#replay").addEventListener("click", () => {
+  verdict.reset();
+  submit.disabled = true;
+  advance.hidden = false;
+  result.hidden = true;
+  showRecord(0);
+  nextButton.focus();
+});
+
+showRecord(0);
+</script>
+</body>
+</html>

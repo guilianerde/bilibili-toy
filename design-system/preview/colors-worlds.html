@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>颜色 · 三个世界 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .worlds { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
+  .world { padding: var(--space-5) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
+  .world-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+  .world-head h2 { margin: 0; font-family: var(--font-display); font-size: 1.35rem; }
+  .world-head span { color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); }
+  .swatches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-4); }
+  .sw { display: grid; gap: 2px; }
+  .chip { height: 46px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--c); }
+  .sw b { font-size: var(--text-micro); font-weight: var(--weight-medium); }
+  .sw small { color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .sample { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+  .sample .eyebrow { margin-bottom: var(--space-1); }
+  .sample h3 { margin: 0 0 var(--space-1); font-size: 1.05rem; font-weight: var(--weight-bold); }
+  .sample p { margin: 0; color: var(--ink-muted); font-size: var(--text-small); }
+  .sample .state { margin-top: var(--space-2); font-size: var(--text-small); font-weight: var(--weight-medium); }
+  .sample .good { color: var(--state-good); }
+  .sample .bad { color: var(--state-bad); }
+  .notes ul { margin: var(--space-2) 0 0; padding-left: 1.1em; color: var(--ink-muted); font-size: var(--text-small); }
+  .notes li { margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>颜色 · 三个世界</h1>
+  <p class="card-source">来源：bilibili-toy/index.html · story-stock/style.css · dub-it/index.html</p>
+</header>
+
+<main>
+  <div class="worlds">
+    <section class="world" data-world="night" style="background: var(--bg); border-color: var(--line);">
+      <div class="world-head"><h2>夜色监测屏</h2><span>弹幕侦探</span></div>
+      <div class="swatches">
+        <div class="sw"><span class="chip" style="--c:#101310"></span><b>地面</b><small>#101310</small></div>
+        <div class="sw"><span class="chip" style="--c:#191e17"></span><b>面板</b><small>#191e17</small></div>
+        <div class="sw"><span class="chip" style="--c:#353b2f"></span><b>分隔</b><small>#353b2f</small></div>
+        <div class="sw"><span class="chip" style="--c:#e9e8db"></span><b>正文</b><small>#e9e8db</small></div>
+        <div class="sw"><span class="chip" style="--c:#a9ad9c"></span><b>次要</b><small>#a9ad9c</small></div>
+        <div class="sw"><span class="chip" style="--c:#f4ce79"></span><b>强调</b><small>#f4ce79</small></div>
+      </div>
+      <div class="sample">
+        <p class="eyebrow">机位 A · 配电间门口</p>
+        <h3>停电前的 10 秒</h3>
+        <p>工牌 17 刷卡进入，直到停电也没有第二次进出。</p>
+        <p class="state"><span class="good">案件告破</span> · <span class="bad">推理复盘</span></p>
+      </div>
+    </section>
+
+    <section class="world" data-world="paper">
+      <div class="world-head"><h2>纸张账本</h2><span>三国交易所</span></div>
+      <div class="swatches">
+        <div class="sw"><span class="chip" style="--c:#f2efe9"></span><b>纸</b><small>#f2efe9</small></div>
+        <div class="sw"><span class="chip" style="--c:#fdfbf7"></span><b>卡片</b><small>#fdfbf7</small></div>
+        <div class="sw"><span class="chip" style="--c:#e1d9cd"></span><b>描边</b><small>#e1d9cd</small></div>
+        <div class="sw"><span class="chip" style="--c:#272018"></span><b>正文</b><small>#272018</small></div>
+        <div class="sw"><span class="chip" style="--c:#63584b"></span><b>次要</b><small>#63584b</small></div>
+        <div class="sw"><span class="chip" style="--c:#94692d"></span><b>强调</b><small>#94692d</small></div>
+      </div>
+      <div class="sample">
+        <p class="eyebrow">公元 208 年 · 赤壁之战</p>
+        <h3>曹氏 128 铜钱</h3>
+        <p>涨跌用中式约定：红为涨，绿为跌。</p>
+        <p class="state" style="color: var(--market-up);">+6.4% 涨</p>
+      </div>
+    </section>
+
+    <section class="world" data-world="lilac">
+      <div class="world-head"><h2>淡紫配音台</h2><span>给这段乱配音</span></div>
+      <div class="swatches">
+        <div class="sw"><span class="chip" style="--c:#f4f1fa"></span><b>纸</b><small>#f4f1fa</small></div>
+        <div class="sw"><span class="chip" style="--c:#fffdff"></span><b>卡片</b><small>#fffdff</small></div>
+        <div class="sw"><span class="chip" style="--c:#ded6e9"></span><b>描边</b><small>#ded6e9</small></div>
+        <div class="sw"><span class="chip" style="--c:#241b31"></span><b>正文</b><small>#241b31</small></div>
+        <div class="sw"><span class="chip" style="--c:#655b73"></span><b>次要</b><small>#655b73</small></div>
+        <div class="sw"><span class="chip" style="--c:#6334d3"></span><b>强调</b><small>#6334d3</small></div>
+      </div>
+      <div class="sample">
+        <p class="eyebrow">猫和杯子 · 循环预览</p>
+        <h3>录下你的第一版</h3>
+        <p>六个键各自带一组成对的底色、描边与字色。</p>
+        <p class="state" style="color: var(--accent);">录制中 · 0.0 秒</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel notes" style="margin-top: var(--space-5);">
+    <h2>用色规则</h2>
+    <ul>
+      <li>世界底色一次定死，子面板只做一级抬升，不用渐变抬层级。</li>
+      <li><code>--state-good/bad</code> 表示结果好坏，<code>--market-up/down</code> 表示行情涨跌，两者不互相借用。</li>
+      <li>强调色只承担一种职责：琥珀=注意力，金色=章节与选中，紫色=主操作。</li>
+      <li>所有正文对比度 ≥ 4.5:1（夜色 15.2:1 / 纸张 14.0:1 / 淡紫 14.7:1），次要文本 ≥ 6:1。</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="card-foot">preview/colors-worlds.html · 单屏玩具设计系统</footer>
+</body>
+</html>

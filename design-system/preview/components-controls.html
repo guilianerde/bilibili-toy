@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>组件 · 行情、交易单与音效键 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .card { padding: var(--panel-pad); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+  .section-line { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2-5); }
+  .section-line h2 { margin: 0; font-size: 1.06rem; }
+  .section-line span { color: var(--ink-muted); font-size: var(--text-small); }
+  .tickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+  .ticker { display: grid; justify-items: start; gap: var(--space-1-5); min-width: 0; padding: 9px 10px; color: var(--ink); text-align: left; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); font: inherit; cursor: pointer; }
+  .ticker:hover { border-color: #a58f72; }
+  .ticker[aria-pressed="true"] { border-color: #a16538; background: var(--surface); box-shadow: inset 0 -2px #a16538; }
+  .ticker:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .faction { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-small); }
+  .emblem { display: inline-grid; place-items: center; width: 25px; height: 25px; flex: none; border-radius: var(--radius-xs); color: #fff; font: 700 1rem var(--font-serif); }
+  .wei { background: #4c5762; } .shu { background: #42624f; } .wu { background: #8f4634; } .jin { background: #755367; }
+  .ticker-quote { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--space-2); line-height: 1.25; font-variant-numeric: tabular-nums; }
+  .ticker-quote b { font-size: var(--text-body-lg); font-weight: 730; }
+  .change { font-size: 0.8125rem; font-weight: var(--weight-medium); }
+  .up { color: var(--market-up); } .down { color: var(--market-down); }
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); padding: var(--space-1); border-radius: var(--radius-sm); background: var(--surface-sunken); }
+  .sides button { min-height: var(--control-min); border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--text-small); font-weight: var(--weight-medium); cursor: pointer; }
+  #buy-demo[aria-pressed="true"] { background: var(--state-bad-soft); border-color: #e5cec3; color: var(--market-up); }
+  #sell-demo[aria-pressed="true"] { background: var(--state-good-soft); border-color: #d0e4d6; color: var(--market-down); }
+  .quantity-head, .order-total { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-2-5); font-size: var(--text-small); }
+  .quantity-head { margin: var(--space-2-5) 0 5px; }
+  .quantity-head span, .order-total span { color: var(--ink-muted); }
+  .quantity-row { display: flex; gap: var(--space-2); }
+  input[type="number"] { min-width: 0; width: 100%; min-height: var(--control-min); padding: 4px 9px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 5px; font: inherit; font-variant-numeric: tabular-nums; }
+  input[type="number"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+  .max { min-height: var(--control-min); padding: 0 10px; white-space: nowrap; border: 1px solid var(--line-strong); border-radius: 5px; background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--text-small); font-weight: var(--weight-medium); cursor: pointer; }
+  .order-total strong { font-variant-numeric: tabular-nums; }
+  .button { width: 100%; min-height: var(--control-min-comfy); margin-top: var(--space-1-5); padding: 8px 14px; border: 1px solid transparent; border-radius: 7px; color: #fff9f0; font: inherit; font-weight: var(--weight-bold); cursor: pointer; }
+  .button.buy { background: var(--market-up); }
+  .button.sell { background: var(--market-down); }
+  .button:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+
+  .player { padding: var(--space-3); border-radius: var(--radius-xl); background: var(--surface-strong); color: var(--ink-on-strong); }
+  .frame-head { display: flex; justify-content: space-between; gap: var(--space-2-5); padding: 0 2px var(--space-2); font-size: var(--text-small); font-weight: var(--weight-bold); }
+  .frame-head span:last-child { color: #e4d7fa; }
+  .frame-head span:last-child::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #ad93da; vertical-align: 2px; }
+  .track { position: relative; height: 17px; margin: var(--space-2) 0; }
+  .rail { position: absolute; inset: 5px 0; overflow: hidden; border-radius: var(--radius-pill); background: #594a6d; }
+  .fill { position: absolute; inset: 0; background: #cfb2ff; transform-origin: left center; transform: scaleX(0.32); }
+  .marker { position: absolute; left: var(--at); top: -2px; width: 4px; height: 11px; border: 1px solid #38294d; border-radius: 3px; background: var(--key-bg, #ffded8); transform: translateX(-50%); }
+  .pads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: var(--space-3); }
+  .pad { position: relative; display: flex; min-height: 84px; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 1px solid var(--key-border); border-radius: 11px; background: var(--key-bg); color: var(--key-ink); font: inherit; font-size: 0.92rem; font-weight: 800; box-shadow: inset 0 -3px #251b3210; transition: transform var(--dur-fast), filter var(--dur-fast), outline-color var(--dur-fast); cursor: pointer; }
+  .pad:active, .pad.hit { transform: translateY(2px); filter: saturate(1.45); outline: 2px solid var(--key-ink); outline-offset: -3px; }
+  .pad:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+  .pad kbd { position: absolute; right: 7px; top: 5px; opacity: 0.73; font: 600 0.72rem var(--font-mono); }
+  .brake { --key-bg: #fff0c8; --key-border: #edcd81; --key-ink: #684606; }
+  .boom { --key-bg: #ffded8; --key-border: #f1b0a6; --key-ink: #8a2c32; }
+  .clap { --key-bg: #d8f0d4; --key-border: #aed5a7; --key-ink: #325c2c; }
+  .sting { --key-bg: #ebe0ff; --key-border: #cdb8f1; --key-ink: #543285; }
+  .ding { --key-bg: #d9eff9; --key-border: #afd4e9; --key-ink: #2f5268; }
+  .meow { --key-bg: #f9e0f0; --key-border: #e9b5d5; --key-ink: #77375f; }
+  .transport { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3-5); }
+  .transport button { flex: 1 1 auto; min-height: var(--control-min); padding: 8px 13px; border-radius: var(--radius-md); font: inherit; font-size: 0.96rem; font-weight: 800; cursor: pointer; }
+  .t-primary { color: var(--accent-ink); background: var(--accent); border: 1px solid var(--accent); }
+  .t-secondary { color: #462872; background: #f8f3fd; border: 1px solid var(--line); }
+  @media (max-width: 640px) { .tickers { grid-template-columns: 1fr; } .pads { grid-template-columns: repeat(3, minmax(0, 1fr)); } .pad { min-height: 58px; } }
+  @media (prefers-reduced-motion: reduce) { .pad { transition: none; } }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>组件 · 行情、交易单与音效键</h1>
+  <p class="card-source">来源：story-stock/style.css:65–84,170–205 · market.js · dub-it/index.html:62–78, scene.js</p>
+</header>
+
+<main style="display: grid; gap: var(--space-4);">
+  <section class="card" data-world="paper">
+    <div class="section-line"><h2>势力行情</h2><span>铜钱 / 股</span></div>
+    <div class="tickers" role="group" aria-label="选择势力">
+      <button class="ticker" type="button" aria-pressed="true">
+        <span class="faction"><i class="emblem shu" aria-hidden="true">刘</i>刘氏</span>
+        <span class="ticker-quote"><b>112.6</b><span class="change up">+4.2%</span></span>
+      </button>
+      <button class="ticker" type="button" aria-pressed="false">
+        <span class="faction"><i class="emblem wei" aria-hidden="true">曹</i>曹氏</span>
+        <span class="ticker-quote"><b>128.4</b><span class="change down">-1.8%</span></span>
+      </button>
+      <button class="ticker" type="button" aria-pressed="false">
+        <span class="faction"><i class="emblem wu" aria-hidden="true">孙</i>孙氏</span>
+        <span class="ticker-quote"><b>96.2</b><span class="change up">+2.1%</span></span>
+      </button>
+      <button class="ticker" type="button" aria-pressed="false">
+        <span class="faction"><i class="emblem jin" aria-hidden="true">晋</i>司马氏</span>
+        <span class="ticker-quote"><b>—</b><span class="change">未挂牌</span></span>
+      </button>
+    </div>
+    <p class="note">示意图显示 4 家；应用内恢复源实现的 11 家，退市与未挂牌以灰底与「—」区分。</p>
+  </section>
+
+  <section class="card" data-world="paper">
+    <div class="section-line"><h2>交易单</h2><span>112.6 铜钱</span></div>
+    <div class="sides" role="group" aria-label="交易方向">
+      <button type="button" id="buy-demo" aria-pressed="true">买入</button>
+      <button type="button" id="sell-demo" aria-pressed="false">卖出</button>
+    </div>
+    <div class="quantity-head"><label for="qty-demo">股数</label><span>最多 88 股</span></div>
+    <div class="quantity-row">
+      <input type="number" id="qty-demo" name="qty-demo" inputmode="numeric" min="1" step="1" value="10">
+      <button type="button" class="max">最大</button>
+    </div>
+    <div class="order-total"><span>手续费 · 0.5%</span><span>¥6</span></div>
+    <div class="order-total"><span>预计支出</span><strong>1,132 铜钱</strong></div>
+    <button type="button" class="button buy">确认买入</button>
+  </section>
+
+  <section class="player" data-world="lilac">
+    <div class="frame-head"><span>猫和杯子</span><span>录制中 · 0.0 秒</span></div>
+    <div class="track" aria-hidden="true">
+      <div class="rail"><div class="fill"></div></div>
+      <span class="marker" style="--at:18%;--key-bg:#fff0c8"></span>
+      <span class="marker" style="--at:46%;--key-bg:#ffded8"></span>
+      <span class="marker" style="--at:74%;--key-bg:#ebe0ff"></span>
+    </div>
+    <div class="pads" role="group" aria-label="音效键">
+      <button type="button" class="pad brake">刹车<kbd>B</kbd></button>
+      <button type="button" class="pad boom">爆炸<kbd>X</kbd></button>
+      <button type="button" class="pad clap">场记<kbd>C</kbd></button>
+      <button type="button" class="pad sting">叮<kbd>S</kbd></button>
+      <button type="button" class="pad ding">水声<kbd>D</kbd></button>
+      <button type="button" class="pad meow">喵<kbd>M</kbd></button>
+    </div>
+    <div class="transport">
+      <button type="button" class="t-primary">开始录制</button>
+      <button type="button" class="t-secondary">回放</button>
+    </div>
+  </section>
+
+  <section class="panel" data-world="paper">
+    <p class="eyebrow">状态与焦点</p>
+    <h2>每个控件都有可见状态</h2>
+    <p style="margin-top: var(--space-2);">悬停只加深或提亮同调色彩；焦点统一为 2px 强调描边 + 3px 间距；禁用透明度 0.46–0.67 且 cursor 变 default。触控目标不小于 <code>--control-min: 44px</code>，密集表格行才降到 34px。</p>
+  </section>
+</main>
+
+<footer class="card-foot">preview/components-controls.html · 单屏玩具设计系统</footer>
+</body>
+</html>

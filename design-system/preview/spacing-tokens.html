@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>间距 · 4/8 节奏 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .scale { display: grid; gap: var(--space-1-5); margin-top: var(--space-2); }
+  .scale-row { display: grid; grid-template-columns: 5.5em 4.5em minmax(0, 1fr); align-items: center; gap: var(--space-3); }
+  .scale-row code { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
+  .scale-row span { color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .bar { height: 14px; border-radius: 2px; background: color-mix(in srgb, var(--accent) 34%, var(--surface)); border: 1px solid var(--line); }
+  .rhythm { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: var(--space-4); }
+  .specimen { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden; }
+  .specimen-head { padding: var(--strip-pad); border-bottom: 1px solid var(--line); color: var(--ink-muted); font-size: var(--text-caption); display: flex; justify-content: space-between; gap: var(--space-2); }
+  .specimen-body { padding: var(--panel-pad); display: grid; gap: var(--gap-stack); }
+  .mini-panel { padding: var(--panel-pad-tight); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-sunken); }
+  .mini-panel b { display: block; font-size: var(--text-small); }
+  .mini-panel small { color: var(--ink-muted); font-family: var(--font-mono); font-size: 10px; }
+  .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .controls button { min-height: var(--control-min); border: 0; border-right: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: var(--text-small); cursor: pointer; }
+  .controls button:last-child { border-right: 0; }
+  .controls button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
+  .layout-demo { display: grid; grid-template-columns: var(--grid-main); gap: var(--space-3); margin-top: var(--space-3); }
+  .layout-demo > div { min-height: 92px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .breakpoint { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+  .breakpoint span { padding: 3px 8px; border: 1px solid var(--line); border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: var(--text-micro); color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>间距 · 4/8 节奏</h1>
+  <p class="card-source">来源：index.html:31,44,45,84 · story-stock/style.css:65,150 · 检测台 / 配音台结构</p>
+</header>
+
+<main>
+  <section class="panel" data-world="night">
+    <p class="eyebrow">tokens.css</p>
+    <h2>间距刻度</h2>
+    <div class="scale">
+      <div class="scale-row"><code>--space-1</code><span>4px</span><i class="bar" style="width:4px"></i></div>
+      <div class="scale-row"><code>--space-1-5</code><span>6px</span><i class="bar" style="width:6px"></i></div>
+      <div class="scale-row"><code>--space-2</code><span>8px</span><i class="bar" style="width:8px"></i></div>
+      <div class="scale-row"><code>--space-2-5</code><span>10px</span><i class="bar" style="width:10px"></i></div>
+      <div class="scale-row"><code>--space-3</code><span>12px</span><i class="bar" style="width:12px"></i></div>
+      <div class="scale-row"><code>--space-3-5</code><span>14px</span><i class="bar" style="width:14px"></i></div>
+      <div class="scale-row"><code>--space-4</code><span>16px</span><i class="bar" style="width:16px"></i></div>
+      <div class="scale-row"><code>--space-5</code><span>20px</span><i class="bar" style="width:20px"></i></div>
+      <div class="scale-row"><code>--space-6</code><span>24px</span><i class="bar" style="width:24px"></i></div>
+      <div class="scale-row"><code>--space-8</code><span>32px</span><i class="bar" style="width:32px"></i></div>
+      <div class="scale-row"><code>--space-9</code><span>36px</span><i class="bar" style="width:36px"></i></div>
+      <div class="scale-row"><code>--space-13</code><span>52px</span><i class="bar" style="width:52px"></i></div>
+      <div class="scale-row"><code>--space-16</code><span>64px</span><i class="bar" style="width:64px"></i></div>
+    </div>
+  </section>
+
+  <div class="rhythm">
+    <article class="specimen" data-world="night">
+      <div class="specimen-head"><span>监控面板 · MonitorPanel</span><span>来源 index.html</span></div>
+      <div class="specimen-body">
+        <div class="mini-panel"><b>线索 2 / 3</b><small>--text-caption · 眉标</small></div>
+        <div class="mini-panel"><b>配电日志</b><small>--gap-stack = 16px</small></div>
+      </div>
+      <div class="controls" role="group" aria-label="切换记录">
+        <button type="button" aria-pressed="true">门禁画面</button>
+        <button type="button" aria-pressed="false">配电日志</button>
+        <button type="button" aria-pressed="false">舞台画面</button>
+      </div>
+    </article>
+
+    <article class="specimen" data-world="paper">
+      <div class="specimen-head"><span>账本卡 · HoldingsCard</span><span>来源 story-stock/style.css</span></div>
+      <div class="specimen-body">
+        <div class="mini-panel"><b>总资产 12,480 铜钱</b><small>--panel-pad = 16px</small></div>
+        <div class="mini-panel"><b>已付手续费 96 铜钱</b><small>--gap-stack = 16px</small></div>
+      </div>
+    </article>
+
+    <article class="specimen" data-world="lilac">
+      <div class="specimen-head"><span>音效键板 · SoundPad</span><span>来源 dub-it/index.html</span></div>
+      <div class="specimen-body">
+        <div class="mini-panel"><b>六个键 · 2 列 3 行</b><small>--gap-cluster = 8px</small></div>
+        <div class="mini-panel"><b>键高 84px / 触控底线 44px</b><small>--panel-pad = 16px</small></div>
+      </div>
+    </article>
+  </div>
+
+  <section class="panel" style="margin-top: var(--space-4);">
+    <p class="eyebrow">--grid-main</p>
+    <h2>版式骨架</h2>
+    <div class="layout-demo">
+      <div>主面板 1.65fr</div>
+      <div>侧栏 1fr</div>
+    </div>
+    <div class="breakpoint">
+      <span>690px · 检查台单列（index.html:119）</span>
+      <span>740px · 配音台单列（dub-it/index.html:84）</span>
+      <span>980px · 交易所交易栏转单列</span>
+      <span>760px · 行情两列（源断点 760px）</span>
+    </div>
+  </section>
+</main>
+
+<footer class="card-foot">preview/spacing-tokens.html · 单屏玩具设计系统</footer>
+</body>
+</html>

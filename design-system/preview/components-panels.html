@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>组件 · 监控面板与推理表单 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .case-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); align-items: start; gap: var(--space-4); }
+  .panel-card { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden; }
+  .monitor-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--strip-pad); color: var(--ink-muted); font-size: var(--text-caption); }
+  .monitor-head time { color: var(--accent); font-size: var(--text-small); font-family: var(--font-mono); }
+  .scene { position: relative; height: 214px; overflow: hidden; isolation: isolate; background: #202719; }
+  .scene::after { content: ""; position: absolute; z-index: var(--z-scene-overlay); inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, #0002 0 1px, transparent 2px 4px), radial-gradient(ellipse at 50% 50%, transparent 28%, #080b08b0 100%); }
+  .art { position: absolute; inset: 0; }
+  .back-wall { position: absolute; inset: 20% 35% 26%; background: linear-gradient(100deg, #555d41, #303824 75%); box-shadow: 0 0 50px #d2d68f23; }
+  .left-wall, .right-wall, .ceiling, .floor { position: absolute; inset: 0; }
+  .left-wall { clip-path: polygon(0 0, 35% 20%, 35% 74%, 0 100%); background: linear-gradient(90deg, #242b20, #46503a 50%); }
+  .right-wall { clip-path: polygon(100% 0, 65% 20%, 65% 74%, 100% 100%); background: linear-gradient(270deg, #252c22, #50583d 50%); }
+  .ceiling { clip-path: polygon(0 0, 100% 0, 65% 20%, 35% 20%); background: #333c2a; }
+  .floor { clip-path: polygon(0 100%, 35% 74%, 65% 74%, 100% 100%); background: linear-gradient(#394431 71%, #242b20); }
+  .door { position: absolute; inset: 29% 42% 26%; background: #23291e; border: 2px solid #646c4c; }
+  .door::after { content: ""; position: absolute; top: 51%; right: 12%; width: 4px; height: 4px; background: var(--accent); }
+  .light { position: absolute; top: 11%; left: 38%; width: 24%; height: 4%; background: #e4dfa0; box-shadow: 0 0 26px 6px #e5dea272; }
+  .sensor { position: absolute; right: 22%; top: 42%; width: 8px; height: 14px; border: 1px solid #99946b; background: #25281f; box-shadow: 0 0 8px #d0b67755; }
+  .scene-note { position: absolute; inset: auto 12px 12px auto; z-index: var(--z-note); border: 1px solid #c1c0a26b; background: #151a13e8; color: #e9e8db; padding: 4px 8px; font-size: var(--text-micro); font-family: var(--font-mono); }
+  .details { min-height: 132px; padding: 13px 14px 14px; }
+  .details .eyebrow { margin-bottom: var(--space-1-5); }
+  .quote { margin: 0 0 var(--space-2); font-weight: var(--weight-medium); }
+  .fact { margin: 0; color: var(--ink-muted); font-size: var(--text-small); }
+  .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .controls button { min-height: var(--control-min); border: 0; border-right: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: var(--text-small); cursor: pointer; }
+  .controls button:last-child { border-right: 0; }
+  .controls button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
+  .advance { padding: var(--space-2-5) 14px 14px; }
+  .primary { width: 100%; min-height: var(--control-min); padding: 9px 14px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: var(--weight-bold); cursor: pointer; }
+  .primary:hover { background: var(--accent-hover); }
+  .primary:disabled { opacity: 0.46; cursor: default; }
+  .primary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .dossier { padding: var(--space-3-5); }
+  .dossier h2 { margin-bottom: var(--space-1); }
+  .dossier p { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--text-small); }
+  .dossier ul { list-style: none; margin: 0; padding: 0; }
+  .dossier li { padding: 9px 0; border-top: 1px solid var(--line); color: var(--ink-muted); font-size: var(--text-small); }
+  .dossier strong { display: inline-block; min-width: 3.3em; color: var(--ink); }
+  .claims { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3-5); }
+  fieldset { min-width: 0; margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-md); }
+  legend { padding: 0 5px; color: var(--accent); font-size: var(--text-small); }
+  .choice { display: flex; align-items: center; min-height: var(--control-min); gap: 9px; padding: 4px 6px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-small); }
+  .choice:has(:checked) { background: var(--accent-soft); }
+  .result { margin-top: var(--space-4); padding: var(--panel-pad); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+  .result[data-outcome="solved"] h2 { color: var(--state-good); }
+  .result[data-outcome="missed"] h2 { color: var(--state-bad); }
+  .result h2 { margin: 0 0 var(--space-1); }
+  .result p { margin: 0; color: var(--ink-muted); font-size: var(--text-small); }
+  @media (max-width: 720px) { .case-grid, .claims { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>组件 · 监控面板与推理表单</h1>
+  <p class="card-source">来源：source_examples/bilibili-toy/index.html · 场景布景出自 index.html:38–118</p>
+</header>
+
+<main>
+  <div class="case-grid">
+    <section class="panel-card" data-world="night" aria-label="现场记录">
+      <div class="monitor-head"><span>记录 B · 配电柜</span><time>21:59:58</time></div>
+      <div class="scene" aria-hidden="true">
+        <div class="art">
+          <div class="back-wall"></div><div class="left-wall"></div><div class="right-wall"></div>
+          <div class="ceiling"></div><div class="floor"></div><div class="door"></div>
+          <div class="light"></div><div class="sensor"></div>
+        </div>
+        <span class="scene-note">开关事件</span>
+      </div>
+      <div class="details">
+        <p class="eyebrow">线索 2 / 3</p>
+        <p class="quote">弹幕「等等，先看看配电日志的最后一行。」</p>
+        <p class="fact">事件：本地手动断开。日志来自配电柜内的实体开关，只有在柜前拨动它才会生成。</p>
+      </div>
+      <div class="controls" role="group" aria-label="切换记录">
+        <button type="button" aria-pressed="false">门禁画面</button>
+        <button type="button" aria-pressed="true">配电日志</button>
+        <button type="button" aria-pressed="false">舞台画面</button>
+      </div>
+      <div class="advance"><button class="primary" type="button">下一条线索：舞台画面</button></div>
+    </section>
+
+    <aside class="panel-card dossier" data-world="night">
+      <h2>值班名单</h2>
+      <p>配电间只有一扇门，门禁使用个人工牌。三个机位的时钟已同步。</p>
+      <ul>
+        <li><strong>林默</strong> 导播 · 工牌 04</li>
+        <li><strong>阿栎</strong> 灯光 · 工牌 17</li>
+        <li><strong>小岑</strong> 场务 · 工牌 23</li>
+      </ul>
+      <button class="primary" type="button">开始推理</button>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top: var(--space-4);" data-world="night">
+    <p class="eyebrow">VerdictForm</p>
+    <h2>提交推理</h2>
+    <div class="claims">
+      <fieldset>
+        <legend>是谁关了电源？</legend>
+        <label class="choice"><input type="radio" name="person-demo" checked> 林默 · 工牌 04</label>
+        <label class="choice"><input type="radio" name="person-demo"> 阿栎 · 工牌 17</label>
+        <label class="choice"><input type="radio" name="person-demo"> 小岑 · 工牌 23</label>
+      </fieldset>
+      <fieldset>
+        <legend>哪条记录证明断电是手动操作？</legend>
+        <label class="choice"><input type="radio" name="proof-demo"> 读卡器刷出了工牌 17</label>
+        <label class="choice"><input type="radio" name="proof-demo"> 配电日志记录「本地手动断开」</label>
+        <label class="choice"><input type="radio" name="proof-demo"> 舞台屏幕突然熄灭</label>
+      </fieldset>
+    </div>
+  </section>
+
+  <div class="result" data-outcome="solved" data-world="night" style="margin-top: var(--space-4);">
+    <p class="eyebrow">推理得分 2 / 2</p>
+    <h2>案件告破</h2>
+    <p>阿栎关了总电源。21:59:50，17 号工牌刷入配电间；八秒后，柜内开关记下「本地手动断开」。</p>
+  </div>
+
+  <div class="result" data-outcome="missed" data-world="night" style="margin-top: var(--space-3);">
+    <p class="eyebrow">推理得分 1 / 2</p>
+    <h2>推理复盘</h2>
+    <p>再看一次机位 B：断电时间与开关日志只差一秒。</p>
+  </div>
+</main>
+
+<footer class="card-foot">preview/components-panels.html · 单屏玩具设计系统</footer>
+</body>
+</html>

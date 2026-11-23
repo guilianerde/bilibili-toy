@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "source_examples/dub-it/index.html",
+  "entry": "source_examples/dub-it/index.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:27:16.819Z",
+  "updatedAt": "2026-11-22T16:27:16.819Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

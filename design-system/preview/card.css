@@ -1,0 +1,72 @@
+/* 单屏玩具 · preview card chrome
+   Shared shell for the focused review cards. Loaded after
+   ../colors_and_type.css and ../tokens.css so cards inherit real tokens. */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: clamp(20px, 4vw, 44px);
+  color: var(--ink);
+  background: var(--bg);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+.card-head h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-family: var(--font-display);
+  letter-spacing: normal;
+  line-height: var(--leading-snug);
+}
+.card-source {
+  margin: 0;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-variant-numeric: tabular-nums;
+}
+
+.grid { display: grid; gap: var(--space-4); }
+.panel {
+  padding: var(--panel-pad);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.panel h2 {
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--text-title);
+}
+.panel p { margin: 0; color: var(--ink-muted); font-size: var(--text-small); }
+
+.eyebrow {
+  margin: 0 0 var(--space-2) 0;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-eyebrow);
+}
+
+footer.card-foot {
+  margin-top: var(--space-6);
+  color: var(--ink-muted);
+  font-size: var(--text-micro);
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

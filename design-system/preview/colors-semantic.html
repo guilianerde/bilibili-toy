@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>颜色 · 语义与警示 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .sem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4); }
+  .row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2-5) 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .dot { width: 14px; height: 14px; flex: none; border-radius: var(--radius-xs); background: var(--c); border: 1px solid var(--line-strong); }
+  .row b { min-width: 8.5em; font-size: var(--text-small); }
+  .row code { color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .row .ratio { margin-left: auto; color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
+  .key {
+    display: grid; place-items: center; min-height: 64px; border: 1px solid var(--key-border); border-radius: var(--radius-xl);
+    background: var(--key-bg); color: var(--key-ink); font-weight: var(--weight-black); font-size: var(--text-small);
+  }
+  .scene { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
+  .scene span { display: grid; place-items: center; min-height: 56px; border-radius: var(--radius-md); color: #f3f1e2; font-family: var(--font-mono); font-size: 11px; }
+  .banner { margin-top: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-sunken); }
+  .banner h3 { margin: 0 0 var(--space-1); font-size: 1.05rem; }
+  .banner p { margin: 0; font-size: var(--text-small); color: var(--ink-muted); }
+  .banner.good h3 { color: var(--state-good); }
+  .banner.bad h3 { color: var(--state-bad); }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>颜色 · 语义与警示</h1>
+  <p class="card-source">来源：story-stock/style.css · index.html:131–137 · dub-it/index.html:76–82</p>
+</header>
+
+<main>
+  <div class="sem-grid">
+    <section class="panel" data-world="night">
+      <p class="eyebrow">夜色世界</p>
+      <h2>结果语义</h2>
+      <div class="row"><span class="dot" style="--c:var(--state-good)"></span><b>state-good</b><code>#b9d7ad</code><span class="ratio">10.8:1</span></div>
+      <div class="row"><span class="dot" style="--c:var(--state-bad)"></span><b>state-bad</b><code>#ffac99</code><span class="ratio">9.4:1</span></div>
+      <div class="row"><span class="dot" style="--c:var(--accent)"></span><b>accent</b><code>#f4ce79</code><span class="ratio">11.3:1</span></div>
+      <div class="banner good"><h3>案件告破</h3><p>绿只表示「推论成立」，红只表示「重看线索」。</p></div>
+    </section>
+
+    <section class="panel" data-world="paper">
+      <p class="eyebrow">纸张世界</p>
+      <h2>行情语义</h2>
+      <div class="row"><span class="dot" style="--c:var(--market-up)"></span><b>market-up</b><code>#962f28</code><span class="ratio">7.4:1</span></div>
+      <div class="row"><span class="dot" style="--c:var(--market-down)"></span><b>market-down</b><code>#22604e</code><span class="ratio">7.1:1</span></div>
+      <div class="row"><span class="dot" style="--c:var(--accent)"></span><b>accent</b><code>#94692d</code><span class="ratio">4.7:1</span></div>
+      <div class="banner bad"><h3>跌 2.1%</h3><p>红涨绿跌遵循 A 股习惯；同时给出符号与文字，不依赖颜色单独表意。</p></div>
+    </section>
+    </div>
+
+  <section class="panel" style="margin-top: var(--space-4);">
+    <p class="eyebrow">配音台键帽</p>
+    <h2>成对色阶 · 底 / 边 / 字</h2>
+    <p>每键固定三个变量，来自 dub-it/index.html 的 brake / boom / clap / sting / ding / meow 六组。</p>
+    <div class="keys">
+      <span class="key" style="--key-bg:#fff0c8;--key-border:#edcd81;--key-ink:#684606">刹车</span>
+      <span class="key" style="--key-bg:#ffded8;--key-border:#f1b0a6;--key-ink:#8a2c32">爆炸</span>
+      <span class="key" style="--key-bg:#d8f0d4;--key-border:#aed5a7;--key-ink:#325c2c">场记</span>
+      <span class="key" style="--key-bg:#ebe0ff;--key-border:#cdb8f1;--key-ink:#543285">叮</span>
+      <span class="key" style="--key-bg:#d9eff9;--key-border:#afd4e9;--key-ink:#2f5268">水声</span>
+      <span class="key" style="--key-bg:#f9e0f0;--key-border:#e9b5d5;--key-ink:#77375f">喵</span>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top: var(--space-4);">
+    <p class="eyebrow">CSS 布景</p>
+    <h2>场景色只用于画，不用于写字</h2>
+    <div class="scene">
+      <span style="background:#555d41">scene-back</span>
+      <span style="background:#46503a">scene-side</span>
+      <span style="background:#394431">scene-floor</span>
+      <span style="background:#333c2a">scene-ceiling</span>
+      <span style="background:#23291e">scene-door</span>
+      <span style="background:#e4dfa0;color:#2a2d1e">scene-lamp</span>
+    </div>
+  </section>
+</main>
+
+<footer class="card-foot">preview/colors-semantic.html · 单屏玩具设计系统</footer>
+</body>
+</html>

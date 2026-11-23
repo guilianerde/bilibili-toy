@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#211b16">
+  <meta name="description" content="以三国演义为蓝本的实时炒股模拟器。在十一家势力之间交易，从汉末诸侯会盟一直玩到三国归晋。">
+  <title>三国交易所｜故事炒股模拟器</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="story.js" defer></script>
+  <script src="market.js" defer></script>
+  <script src="quote-chart.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="frame top-inner">
+      <div class="brand"><span class="stamp" aria-hidden="true">易</span> 故事炒股模拟器</div>
+      <button type="button" id="help-open" class="help">玩法</button>
+    </div>
+  </header>
+  <main class="frame">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <p class="hero-note">《三国演义》<span></span> 公元 184–280 年</p>
+        <h1 id="title">三国交易所</h1>
+        <p class="hero-copy">从诸侯会盟到三国归晋，买卖十一家势力。</p>
+      </div>
+    </section>
+
+    <div class="desk">
+      <div class="col-main">
+        <section class="market-panel" aria-labelledby="market-title">
+          <div class="section-line">
+            <h2 id="market-title">势力行情</h2>
+            <span id="market-status">铜钱 / 股</span>
+          </div>
+          <div class="tickers" id="tickers" role="group" aria-label="选择势力"></div>
+        </section>
+
+        <section class="card chart-card quote-card" aria-labelledby="quote-chart-title">
+          <div class="chart-head">
+            <div>
+              <h2 id="quote-chart-title">实时走势</h2>
+              <p id="quote-chart-status"></p>
+            </div>
+            <div class="quote-readout" id="quote-readout">
+              <strong id="quote-chart-price"></strong><span>铜钱 / 股</span>
+            </div>
+          </div>
+          <p id="quote-chart-empty" hidden>挂牌后开始记录分时行情。</p>
+          <canvas id="quote-line" role="img"></canvas>
+        </section>
+
+        <section class="card story-card" aria-labelledby="story-title">
+          <div class="story-head">
+            <p id="phase" class="phase"></p>
+            <p id="round-label" class="round-label"></p>
+          </div>
+          <progress id="round-progress" aria-label="故事进度"></progress>
+          <div id="story-body">
+            <p id="story-location" class="story-location"></p>
+            <h2 id="story-title"></h2>
+            <p id="story-copy" class="story-copy"></p>
+          </div>
+          <div id="news" class="story-news" aria-live="polite" hidden>
+            <p id="news-date" class="story-location"></p>
+            <h3 id="news-title"></h3>
+            <p id="news-copy"></p>
+            <div id="impact" class="impact"></div>
+          </div>
+          <div id="summary" class="summary" hidden>
+            <dl id="summary-stats"></dl>
+            <button type="button" class="button advance" id="restart">再开一局</button>
+          </div>
+        </section>
+
+        <section class="card chart-card kline-card" aria-labelledby="chart-title">
+          <div class="chart-head">
+            <div>
+              <h2 id="chart-title">势力 K 线</h2>
+              <p id="chart-range"></p>
+            </div>
+            <div id="chart-legend" class="legend" aria-label="K 线图例">
+              <span><i class="up"></i>涨</span><span><i class="down"></i>跌</span>
+            </div>
+          </div>
+          <p id="chart-empty" hidden>这家势力尚未挂牌。</p>
+          <div class="plot" id="plot" role="group" aria-label="按剧情顺序选择 K 线节点">
+            <div class="chart-grid" aria-hidden="true"></div>
+            <div class="chart-axis" aria-hidden="true"></div>
+            <div class="candle-grid"></div>
+          </div>
+          <div id="chart-detail" class="chart-detail">
+            <div class="candle-event">
+              <time id="candle-year"></time>
+              <h3 id="candle-title"></h3>
+            </div>
+            <dl class="ohlc" id="ohlc"></dl>
+            <p id="candle-note"></p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="col-side" aria-label="交易单与账本">
+        <section class="card order-card" id="order" aria-labelledby="order-title">
+          <div class="section-line"><h2 id="order-title">交易单</h2><span id="quote"></span></div>
+          <div id="preopen">
+            <p>10,000 铜钱起步。开盘后剧情和报价会自动推进，约 8 分钟后收盘。</p>
+            <button type="button" class="button advance" id="open-market">开盘</button>
+          </div>
+          <form id="trade" hidden>
+            <div class="sides" role="group" aria-label="交易方向">
+              <button type="button" id="buy" aria-pressed="true">买入</button>
+              <button type="button" id="sell" aria-pressed="false">卖出</button>
+            </div>
+            <div class="quantity-head"><label for="quantity">股数</label><span id="capacity"></span></div>
+            <div class="quantity-row">
+              <input type="number" id="quantity" name="quantity" inputmode="numeric" min="1" step="1" value="1" required>
+              <button type="button" class="max" id="max">最大</button>
+            </div>
+            <div class="order-total"><span>手续费 · 0.5%</span><span id="estimate-fee"></span></div>
+            <div class="order-total"><span id="estimate-label">预计支出</span><strong id="estimate"></strong></div>
+            <button type="submit" class="button trade-submit" id="submit">确认买入</button>
+          </form>
+          <p class="trade-status" id="trade-status" role="status"></p>
+        </section>
+
+        <section class="card portfolio" aria-labelledby="portfolio-title">
+          <div class="section-line">
+            <h2 id="portfolio-title">我的账本</h2>
+            <span>铜钱</span>
+          </div>
+          <dl class="ledger">
+            <div><dt>总资产</dt><dd id="equity"></dd></div>
+            <div><dt>可用现金</dt><dd id="cash"></dd></div>
+            <div><dt>总收益率</dt><dd id="return"></dd></div>
+            <div><dt>已付手续费</dt><dd id="fees-paid"></dd></div>
+          </dl>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">势力</th><th scope="col">持仓</th><th scope="col">市值</th></tr></thead>
+              <tbody id="positions"></tbody>
+            </table>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <footer>剧情改编自《三国演义》 · 行情使用虚拟铜钱</footer>
+  </main>
+
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <h2 id="help-title">怎么玩</h2>
+    <ol>
+      <li>开盘后，报价每秒更新，每 24 秒公布一条军情。你可以随时按当前报价买卖整数股。</li>
+      <li>买卖均收取成交额的 0.5%，向上取整，最低 1 铜钱。估价随报价实时变化。</li>
+      <li>实时走势显示选中势力最近 60 秒的报价。K 线记录各剧情段的开、高、低、收。退市后持仓归零，历史走势仍可查看。</li>
+      <li>三国归晋时市场收盘，存续持仓按收盘价计入总资产。切换标签页时，市场仍按本局开盘时间推进。</li>
+    </ol>
+    <form method="dialog"><button class="button advance">返回交易所</button></form>
+  </dialog>
+</body>
+</html>

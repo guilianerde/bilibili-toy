@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>单屏玩具 · 应用组件库</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .kit-map { width: min(100% - 64px, 1200px); margin-inline: auto; padding: var(--space-5) 0 var(--space-8); border-top: 1px solid var(--line); }
+  .kit-map h2 { margin: 0 0 var(--space-2); font-size: var(--text-small); font-family: var(--font-mono); letter-spacing: var(--tracking-eyebrow); color: var(--ink-muted); font-weight: var(--weight-medium); }
+  .kit-map ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .kit-map li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); color: var(--ink-muted); font-size: var(--text-small); }
+  .kit-map code { color: var(--ink); font-family: var(--font-mono); font-size: var(--text-micro); }
+  .kit-map li span { flex: 1 1 12em; }
+  #root { margin-top: var(--space-4); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<noscript><p style="padding:24px">这个组件库需要 JavaScript 才能组合界面。</p></noscript>
+
+<section class="kit-map" aria-label="组件构成">
+  <h2>组件构成 · composition map</h2>
+  <ul>
+    <li><code>&lt;App&gt;</code><span>应用外壳：品牌栏、玩具切换、舞台</span></li>
+    <li><code>&lt;MarketBoard&gt;</code><span>行情台：状态条 + 事件快报 + 四栏（市场 / 交易 / 持仓 / 资讯）；9 节剧情按时钟自动推进，收盘切换为结算单</span></li>
+    <li><code>&lt;MarketTabs&gt;</code><span>栏目标签：键盘左右切换、资讯未读点、面板显隐与可访问选中态</span></li>
+    <li><code>&lt;EventTape&gt;</code><span>事件快报条：当前事件、下一节与倒计时，点击进入资讯栏</span></li>
+    <li><code>&lt;RoundStrip&gt;</code><span>顶部状态条：回合、纪年、下一事件、倒计时、总资产、收益率</span></li>
+    <li><code>&lt;StoryBeat&gt;</code><span>剧情节拍卡：阶段、进度、势力影响与实盘倒计时</span></li>
+    <li><code>&lt;PriceBoard&gt;</code><span>势力行情 + 逐秒抖动分时 + 逐节收盘 K 线</span></li>
+    <li><code>&lt;TickerBoard&gt;</code><span>11 家势力按钮、印章徽记、逐秒抖动分时折线与价格刻度</span></li>
+    <li><code>&lt;Composer&gt;</code><span>交易单：买卖切换、费用估算与提交</span></li>
+    <li><code>&lt;InputBar&gt;</code><span>股数输入与「最大」快捷动作</span></li>
+    <li><code>&lt;HoldingsCard&gt;</code><span>资产读数与持仓表格：持仓、现价、浮盈</span></li>
+    <li><code>&lt;TradeReceipt&gt;</code><span>成交回执：最近成交在前，含成交价与手续费</span></li>
+    <li><code>&lt;ClosingSummary&gt;</code><span>收盘结算：期末资产、收益率、最高资产、成交与手续费</span></li>
+    <li><code>&lt;DubBoard&gt;</code><span>音效键板、时间轴轨、录制与回放</span></li>
+  </ul>
+</section>
+
+<script src="components/dom.js?v=2"></script>
+<script src="components/TickerBoard.js"></script>
+<script src="components/InputBar.js"></script>
+<script src="components/Composer.js"></script>
+<script src="components/RoundStrip.js"></script>
+<script src="components/StoryBeat.js"></script>
+<script src="components/PriceBoard.js"></script>
+<script src="components/HoldingsCard.js"></script>
+<script src="components/TradeReceipt.js"></script>
+<script src="components/ClosingSummary.js"></script>
+<script src="components/MarketTabs.js"></script>
+<script src="components/EventTape.js"></script>
+<script src="components/MarketBoard.js"></script>
+<script src="components/DubBoard.js"></script>
+<script src="components/App.js"></script>
+<script>
+  document.getElementById("root").append(window.App());
+</script>
+</body>
+</html>

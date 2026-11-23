@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/components-panels.html",
+  "entry": "preview/components-panels.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:32:12.212Z",
+  "updatedAt": "2026-11-22T16:32:12.212Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

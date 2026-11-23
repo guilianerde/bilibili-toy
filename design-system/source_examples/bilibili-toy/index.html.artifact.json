@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "source_examples/bilibili-toy/index.html",
+  "entry": "source_examples/bilibili-toy/index.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:27:16.817Z",
+  "updatedAt": "2026-11-22T16:27:16.817Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

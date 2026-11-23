@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "source_examples/story-stock/index.html",
+  "entry": "source_examples/story-stock/index.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:27:16.829Z",
+  "updatedAt": "2026-11-22T16:27:16.829Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

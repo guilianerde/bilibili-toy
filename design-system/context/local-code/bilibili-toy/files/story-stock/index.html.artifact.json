@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "context/local-code/bilibili-toy/files/story-stock/index.html",
+  "entry": "context/local-code/bilibili-toy/files/story-stock/index.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:27:16.810Z",
+  "updatedAt": "2026-11-22T16:27:16.810Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

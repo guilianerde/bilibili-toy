@@ -1,0 +1,79 @@
+/* 单屏玩具 · One-Screen Toys
+   tokens.css — spacing, radius, elevation, motion and layout rhythm.
+   Values are normalised from the three source toys, which used 4/8 steps
+   plus a few 6/10/14 half-steps. */
+
+:root {
+  /* ---- spacing: 4px base, 8px rhythm ------------------------------- */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-3-5: 14px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-13: 52px;
+  --space-16: 64px;
+
+  /* ---- component padding ------------------------------------------ */
+  --panel-pad: var(--space-4);          /* card interior: 16px */
+  --panel-pad-tight: var(--space-3);    /* chip / strip padding: 12px */
+  --strip-pad: var(--space-2-5) var(--space-3-5); /* header bars 10px 14px */
+  --gap-stack: var(--space-4);          /* vertical rhythm between cards */
+  --gap-cluster: var(--space-2);        /* inside a control cluster */
+
+  /* ---- radius ------------------------------------------------------ */
+  --radius-xs: 4px;    /* stamps, emblems, kbd chips */
+  --radius-sm: 6px;    /* inset surfaces, choice rows */
+  --radius-md: 8px;    /* fieldsets, tickers, inputs */
+  --radius-lg: 12px;   /* panels, hero cards */
+  --radius-xl: 17px;   /* player shell, sound board */
+  --radius-pill: 999px;
+
+  /* ---- elevation ---------------------------------------------------
+     The toys prefer borders over shadows; shadows are reserved for a
+     floating board (lilac) and light glows in the night scene. */
+  --shadow-none: none;
+  --shadow-panel: 0 10px 30px #3429530c;
+  --shadow-float: 0 12px 30px #3429531a;
+  --shadow-glow-amber: 0 0 26px 6px var(--scene-glow);
+
+  /* ---- borders ----------------------------------------------------- */
+  --border-hairline: 1px solid var(--line);
+  --border-strong: 1px solid var(--line-strong);
+  --focus-ring: 2px solid var(--focus);
+  --focus-offset: 3px;
+
+  /* ---- control sizing ---------------------------------------------- */
+  --control-min: 44px;       /* touch target floor, used in all three toys */
+  --control-min-comfy: 45px;
+  --control-min-dense: 34px;
+  --panel-max: none;
+
+  /* ---- layout ------------------------------------------------------ */
+  --frame-width: min(100% - 32px, 1080px);  /* detective */
+  --frame-width-wide: min(100% - 64px, 1200px); /* stock desk */
+  --frame-width-narrow: min(1100px, 100% - 40px); /* dub player */
+  --grid-main: minmax(0, 1.65fr) minmax(0, 1fr);  /* monitor + dossier */
+  --grid-player: minmax(0, 1.85fr) minmax(250px, 1fr); /* stage + pads */
+
+  /* ---- motion ------------------------------------------------------ */
+  --dur-instant: 80ms;
+  --dur-fast: 120ms;    /* pad press, hover tint */
+  --dur-base: 180ms;    /* chip and tab state change */
+  --dur-slow: 300ms;    /* panel reveal, result banner */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---- z-index ----------------------------------------------------- */
+  --z-scene: 1;
+  --z-scene-overlay: 3;
+  --z-note: 4;
+  --z-sticky: 20;
+  --z-dialog: 40;
+}

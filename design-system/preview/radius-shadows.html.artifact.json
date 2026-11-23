@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/radius-shadows.html",
+  "entry": "preview/radius-shadows.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:31:44.496Z",
+  "updatedAt": "2026-11-22T16:31:44.496Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

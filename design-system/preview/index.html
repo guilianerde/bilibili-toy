@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预览目录 | 单屏玩具设计系统</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .lede { margin: 0 0 var(--space-5); color: var(--ink-muted); max-width: 62ch; }
+  .list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+  .item {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: var(--space-1) var(--space-4);
+    padding: var(--space-3) var(--space-3-5); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface);
+  }
+  .item a { color: var(--ink); font-weight: var(--weight-medium); text-decoration: none; }
+  .item a:hover { color: var(--accent); }
+  .item a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .item p { grid-column: 1 / -1; margin: 0; color: var(--ink-muted); font-size: var(--text-small); }
+  .item span { color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); }
+  .groups { display: grid; gap: var(--space-5); }
+  .group h2 { margin: 0 0 var(--space-2); font-size: var(--text-small); color: var(--accent); font-family: var(--font-mono); letter-spacing: var(--tracking-eyebrow); font-weight: var(--weight-medium); }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>预览目录</h1>
+  <p class="card-source">单屏玩具 · One-Screen Toys · 10 张聚焦卡片</p>
+</header>
+
+<main>
+  <p class="lede">每张卡只审一件事：先看颜色与字体，再看间距与组件，最后看三个玩具的落地界面。卡片直接加载真实令牌（<code>colors_and_type.css</code> / <code>tokens.css</code>），不另造色值。</p>
+
+  <div class="groups">
+    <section class="group">
+      <h2>颜色</h2>
+      <ul class="list">
+        <li class="item"><a href="colors-worlds.html">颜色 · 三个世界</a><span>colors-worlds.html</span><p>夜色 / 纸张 / 淡紫三套世界的底色、正文、次要文本与强调色，附真实文案样张。</p></li>
+        <li class="item"><a href="colors-semantic.html">颜色 · 语义与警示</a><span>colors-semantic.html</span><p>结果语义、行情涨跌、键帽色阶与 CSS 布景色，说明颜色不可跨世界复用。</p></li>
+      </ul>
+    </section>
+
+    <section class="group">
+      <h2>字体</h2>
+      <ul class="list">
+        <li class="item"><a href="typography-specimens.html">排版 · 字体标本</a><span>typography-specimens.html</span><p>七级字号、三套字体栈、负/正字距对照、等宽数字与字重阶梯。</p></li>
+      </ul>
+    </section>
+
+    <section class="group">
+      <h2>间距与形状</h2>
+      <ul class="list">
+        <li class="item"><a href="spacing-tokens.html">间距 · 4/8 节奏</a><span>spacing-tokens.html</span><p>13 级间距刻度、三种面板内边距、版式骨架与三个断点。</p></li>
+        <li class="item"><a href="radius-shadows.html">圆角与投影 · 边界优先</a><span>radius-shadows.html</span><p>五级圆角、三档投影、印章 / 徽记 / 菱形图形语言。</p></li>
+      </ul>
+    </section>
+
+    <section class="group">
+      <h2>组件</h2>
+      <ul class="list">
+        <li class="item"><a href="components-panels.html">组件 · 监控面板与推理表单</a><span>components-panels.html</span><p>MonitorPanel、SceneArt、分段切换、VerdictForm、结果横幅，含 solved / missed 两态。</p></li>
+        <li class="item"><a href="components-controls.html">组件 · 行情、交易单与音效键</a><span>components-controls.html</span><p>Ticker、交易单、SoundPad、时间轴轨与运输按钮，含焦点与禁用状态。</p></li>
+        <li class="item"><a href="components-charts.html">组件 · 走势与剧情</a><span>components-charts.html</span><p>K 线蜡烛、价格轴、剧情卡、进度条与分时折线。</p></li>
+      </ul>
+    </section>
+
+    <section class="group">
+      <h2>资产与落地</h2>
+      <ul class="list">
+        <li class="item"><a href="brand-assets.html">品牌资源 · 仅有的真实素材</a><span>brand-assets.html</span><p>加载真实横幅照片 assets/han-river.jpg，并说明为何没有 logo 位图。</p></li>
+        <li class="item"><a href="applied-surfaces.html">落地界面 · 玩具目录</a><span>applied-surfaces.html</span><p>三个玩具并排，用同一套骨架展示三种世界。</p></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top: var(--space-5);">
+    <h2>建议审阅顺序</h2>
+    <p style="margin-top: var(--space-2);">先看 <b>colors-worlds</b> 判断世界观是否成立，再看 <b>typography-specimens</b> 判断层级，然后 <b>components-panels</b> 与 <b>components-controls</b> 核对交互密度，最后用 <b>applied-surfaces</b> 看整体气质。</p>
+  </section>
+</main>
+
+<footer class="card-foot">preview/index.html · 单屏玩具设计系统</footer>
+</body>
+</html>

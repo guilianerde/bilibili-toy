@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>落地界面 · 玩具目录 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .lede { margin: 0 0 var(--space-5); color: var(--ink-muted); max-width: 62ch; }
+  .lede b { color: var(--ink); font-weight: var(--weight-medium); }
+  .shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: var(--space-4); }
+  .toy { display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+  .toy-top { padding: var(--space-4); border-bottom: 1px solid var(--line); }
+  .toy-top .eyebrow { margin-bottom: 6px; }
+  .toy-top h2 { margin: 0; font-family: var(--font-display); font-size: clamp(1.4rem, 2.6vw, 1.8rem); line-height: 1.2; }
+  .toy-top p { margin: var(--space-1-5) 0 0; color: var(--ink-muted); font-size: var(--text-small); }
+  .toy-body { padding: var(--space-4); display: grid; gap: var(--space-3); }
+
+  .mini-scene { position: relative; height: 124px; overflow: hidden; border-radius: var(--radius-md); background: #202719; }
+  .mini-scene::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, #0002 0 1px, transparent 2px 4px); }
+  .mw { position: absolute; }
+  .m-back { inset: 22% 38% 30%; background: linear-gradient(100deg, #555d41, #303824 75%); }
+  .m-left { inset: 0; clip-path: polygon(0 0, 38% 22%, 38% 72%, 0 100%); background: linear-gradient(90deg, #242b20, #46503a 50%); }
+  .m-right { inset: 0; clip-path: polygon(100% 0, 62% 22%, 62% 72%, 100% 100%); background: linear-gradient(270deg, #252c22, #50583d 50%); }
+  .m-floor { inset: 0; clip-path: polygon(0 100%, 38% 72%, 62% 72%, 100% 100%); background: linear-gradient(#394431 70%, #242b20); }
+  .m-door { inset: 30% 44% 28%; background: #23291e; border: 2px solid #646c4c; }
+  .m-light { top: 10%; left: 40%; width: 20%; height: 5%; background: #e4dfa0; box-shadow: 0 0 22px 5px #e5dea272; }
+  .m-note { inset: auto 10px 10px auto; padding: 3px 7px; border: 1px solid #c1c0a26b; background: #151a13e8; color: #e9e8db; font-family: var(--font-mono); font-size: 10px; }
+  .m-quote { margin: 0; font-size: var(--text-small); font-weight: var(--weight-medium); }
+  .m-fact { margin: 0; color: var(--ink-muted); font-size: var(--text-micro); }
+
+  .mini-banner { position: relative; height: 124px; overflow: hidden; border: 1px solid #655345; border-radius: var(--radius-md); background: #2a241d url("../assets/han-river.jpg") 58% 53% / cover; display: grid; align-content: center; gap: 3px; padding: var(--space-3); color: #fff4e3; }
+  .mini-banner b { font: 800 1.35rem/1.2 var(--font-serif); letter-spacing: var(--tracking-serif); }
+  .mini-banner small { color: #f4c997; font-size: 10px; }
+  .mini-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunken); }
+  .mini-tab { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: var(--control-min); padding: 2px 4px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--text-micro); }
+  .mini-tab[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--line-strong); box-shadow: inset 0 -2px var(--accent); }
+  .mini-tab i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .tickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .ticker { display: grid; gap: 3px; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); font-size: var(--text-micro); }
+  .ticker span { display: flex; align-items: center; gap: 5px; }
+  .emblem { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 3px; color: #fff; font: 700 0.7rem var(--font-serif); }
+  .wei { background: #4c5762; } .shu { background: #42624f; } .wu { background: #8f4634; } .jin { background: #755367; }
+  .ticker strong { font-variant-numeric: tabular-nums; }
+  .up { color: var(--market-up); } .down { color: var(--market-down); }
+
+  .mini-pads { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .mini-pad { display: grid; place-items: center; min-height: 44px; border: 1px solid var(--key-border); border-radius: var(--radius-sm); background: var(--key-bg); color: var(--key-ink); font-size: var(--text-micro); font-weight: 800; }
+  .k1 { --key-bg: #fff0c8; --key-border: #edcd81; --key-ink: #684606; }
+  .k2 { --key-bg: #ffded8; --key-border: #f1b0a6; --key-ink: #8a2c32; }
+  .k3 { --key-bg: #d8f0d4; --key-border: #aed5a7; --key-ink: #325c2c; }
+  .k4 { --key-bg: #ebe0ff; --key-border: #cdb8f1; --key-ink: #543285; }
+  .k5 { --key-bg: #d9eff9; --key-border: #afd4e9; --key-ink: #2f5268; }
+  .k6 { --key-bg: #f9e0f0; --key-border: #e9b5d5; --key-ink: #77375f; }
+  .toy-action { padding: var(--space-3) var(--space-4) var(--space-4); border-top: 1px solid var(--line); }
+  .cta { width: 100%; min-height: var(--control-min); border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: var(--weight-bold); cursor: pointer; }
+  .cta:hover { background: var(--accent-hover); }
+  .cta:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .auto-clock { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: var(--control-min); padding: 8px 14px; border: 1px solid var(--state-good-soft); border-radius: 7px; background: var(--surface-sunken); color: var(--ink-muted); font-size: var(--text-small); }
+  .auto-clock strong { color: var(--state-good); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .meta { display: flex; justify-content: space-between; gap: var(--space-2); color: var(--ink-muted); font-family: var(--font-mono); font-size: 10px; }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>落地界面 · 玩具目录</h1>
+  <p class="card-source">三个世界的同一套骨架 · index.html · story-stock/index.html · dub-it/index.html</p>
+</header>
+
+<main>
+  <p class="lede">一屏一个玩具：<b>画面 / 行情 / 键板</b>占主位，<b>名单 / 账本 / 轨道</b>占副位，推进动作永远只有一个主按钮。下面三张卡用各自的令牌，但排版、控件高度、焦点环和文案节奏完全一致。</p>
+
+  <div class="shelf">
+    <article class="toy" data-world="night">
+      <div class="toy-top">
+        <p class="eyebrow">北楼直播间 · 案件回放</p>
+        <h2>停电前的 10 秒</h2>
+        <p>先看 3 条线索，再选出关电的人和证据。</p>
+      </div>
+      <div class="toy-body">
+        <div class="mini-scene" aria-hidden="true">
+          <span class="mw m-back"></span><span class="mw m-left"></span><span class="mw m-right"></span>
+          <span class="mw m-floor"></span><span class="mw m-door"></span><span class="mw m-light"></span>
+          <span class="mw m-note">刷卡记录 · 21:59:50</span>
+        </div>
+        <p class="m-quote">弹幕「镜头看不清脸，右边读卡器亮了。」</p>
+        <p class="m-fact">工牌 17 刷卡进入，直到停电也没有第二次进出。</p>
+        <div class="meta"><span>线索 1 / 3</span><span>机位 A</span></div>
+      </div>
+      <div class="toy-action"><button class="cta" type="button">下一条线索：配电日志</button></div>
+    </article>
+
+    <article class="toy" data-world="paper">
+      <div class="toy-top">
+        <p class="eyebrow">故事炒股模拟器 · 示例对局</p>
+        <h2>三国交易所</h2>
+        <p>九节剧情、10,000 铜钱本金，按实盘时钟边读边买卖。</p>
+      </div>
+      <div class="toy-body">
+        <div class="mini-banner" aria-hidden="true"><small>公元 200 年 · 官渡决胜</small><b>三国交易所</b></div>
+        <div class="mini-tabs" role="tablist" aria-label="交易所栏目">
+          <button class="mini-tab" type="button" role="tab" aria-selected="true">市场</button>
+          <button class="mini-tab" type="button" role="tab" aria-selected="false" tabindex="-1">交易</button>
+          <button class="mini-tab" type="button" role="tab" aria-selected="false" tabindex="-1">持仓</button>
+          <button class="mini-tab" type="button" role="tab" aria-selected="false" tabindex="-1">资讯 <i aria-hidden="true"></i></button>
+        </div>
+        <div class="tickers" aria-hidden="true">
+          <div class="ticker"><span><i class="emblem wei">曹</i>曹氏</span><strong>132.5</strong><span class="up">+3.2%</span></div>
+          <div class="ticker"><span><i class="emblem shu">刘</i>刘氏</span><strong>118.0</strong><span class="up">+4.8%</span></div>
+          <div class="ticker"><span><i class="emblem wu">孙</i>孙氏</span><strong>97.3</strong><span class="up">+1.1%</span></div>
+          <div class="ticker"><span><i class="emblem jin">晋</i>司马氏</span><strong>—</strong><span>未挂牌</span></div>
+        </div>
+        <p class="m-quote">曹操火烧乌巢，袁氏粮草尽失；孙权继位，江东换了主人。</p>
+        <div class="meta"><span>第 1 / 9 节 · 下一事件 邺城陷落</span><span>总资产 12,663 · +26.6%</span></div>
+      </div>
+      <div class="toy-action"><div class="auto-clock"><span>实盘推进 · 下一事件 邺城陷落</span><strong>24 秒</strong></div></div>
+    </article>
+
+    <article class="toy" data-world="lilac">
+      <div class="toy-top">
+        <p class="eyebrow">猫和杯子 · 循环预览</p>
+        <h2>给这段乱配音</h2>
+        <p>导入视频自动配出音效键，也可以先拿猫猫短片练手。</p>
+      </div>
+      <div class="toy-body">
+        <div class="mini-pads" aria-hidden="true">
+          <span class="mini-pad k1">刹车</span><span class="mini-pad k2">爆炸</span><span class="mini-pad k3">场记</span>
+          <span class="mini-pad k4">叮</span><span class="mini-pad k5">水声</span><span class="mini-pad k6">喵</span>
+        </div>
+        <div class="meta"><span>录制中 · 0.0 秒</span><span>6 个键位</span></div>
+      </div>
+      <div class="toy-action"><button class="cta" type="button">开始录制</button></div>
+    </article>
+  </div>
+
+  <section class="panel" style="margin-top: var(--space-5);">
+    <p class="eyebrow">为什么它们看起来是同一套系统</p>
+    <h2>共享骨架，独立世界</h2>
+    <p style="margin-top: var(--space-2);">相同的卡片半径（12px）、相同的 44px 控件底线、相同的「眉标 + 等宽读数」、相同的单主按钮推进方式；不同的只有底色、展示字体和强调色。换世界时不改结构，只换 <code>data-world</code>。</p>
+  </section>
+</main>
+
+<footer class="card-foot">preview/applied-surfaces.html · 单屏玩具设计系统</footer>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "story-stock",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4317", "--bind", "127.0.0.1"],
+      "port": 4317
+    },
+    {
+      "name": "story-stock-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4376", "--bind", "127.0.0.1"],
+      "port": 4376
+    },
+    {
+      "name": "open-design",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4318", "--bind", "127.0.0.1", "--directory", "/Users/rowansen/Library/Application Support/Open Design/namespaces/release-stable/data/projects/fd9ba289-b3b2-49fc-9c12-8b32dfc613a1"],
+      "port": 4318
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f1fa">
+<meta name="description" content="给一段 8 秒无声动画现场配音效。按键的时机会录下来，配完就能回放。">
+<title>给这段乱配音</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #241b31;
+  --subtle: #655b73;
+  --paper: #f4f1fa;
+  --card: #fffdff;
+  --line: #ded6e9;
+  --purple: #6334d3;
+  --purple-dark: #4d23b6;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.5; }
+main { width: min(1100px, 100% - 40px); margin: 0 auto; padding: clamp(26px, 6vw, 76px) 0 max(28px, env(safe-area-inset-bottom)); }
+h1, h2, p { margin: 0; }
+header { margin-bottom: clamp(18px, 3vw, 32px); }
+.title-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 9px 16px; }
+h1 { font-size: clamp(2.5rem, 8vw, 5.5rem); line-height: 1.04; letter-spacing: -.075em; font-weight: 900; }
+h1 span { color: var(--purple); }
+header p { margin-top: 9px; color: var(--subtle); font-size: clamp(.96rem, 2.2vw, 1.125rem); }
+.import-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.import-actions button { padding: 7px 13px; border-radius: 10px; font-size: .92rem; font-weight: 800; }
+.import-actions button:disabled { opacity: .55; }
+#import-status { margin-top: 7px; color: var(--subtle); font-size: .87rem; }
+#import-status.error { color: #8a2c32; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(250px, 1fr); align-items: start; gap: 20px; }
+.player { min-width: 0; overflow: hidden; border: 1px solid #2d223b; border-radius: 17px; background: #251b32; color: #fffaff; box-shadow: 0 12px 30px #3429531a; }
+.frame-head, .frame-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 15px; }
+.frame-head { min-height: 41px; font-size: .87rem; font-weight: 700; }
+.frame-head span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frame-head span:last-child { color: #e4d7fa; white-space: nowrap; }
+.frame-head span:last-child::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #ad93da; vertical-align: 2px; }
+body[data-mode="recording"] .frame-head span:last-child::before { background: #ff8f98; box-shadow: 0 0 0 3px #8a3b55; }
+body[data-mode="replay"] .frame-head span:last-child::before { background: #b5ed9e; }
+canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #ffe4bf; }
+.imported video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #17101f; }
+.frame-foot { min-height: 49px; }
+.seconds { white-space: nowrap; color: #eee2ff; font: 600 .82rem ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.track { position: relative; flex: 1; height: 17px; }
+.rail, .marker-layer { position: absolute; inset: 5px 0; border-radius: 10px; }
+.rail { overflow: hidden; background: #594a6d; }
+.fill { position: absolute; inset: 0; background: #cfb2ff; transform-origin: left center; transform: scaleX(0); }
+.marker { position: absolute; left: var(--at); top: -2px; width: 4px; height: 11px; border: 1px solid #38294d; border-radius: 3px; background: var(--key-bg); transform: translateX(-50%); }
+.board { padding: 17px; border: 1px solid var(--line); border-radius: 17px; background: var(--card); box-shadow: 0 10px 30px #3429530c; }
+.board-head { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+h2 { font-size: 1.16rem; letter-spacing: -.04em; }
+.board-head p { color: var(--subtle); font-size: .84rem; text-align: right; }
+.pads { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+button { min-height: 45px; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; }
+button:disabled { cursor: default; }
+.pad { display: flex; position: relative; min-height: 84px; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 1px solid var(--key-border); border-radius: 11px; background: var(--key-bg); color: var(--key-ink); font-size: .92rem; font-weight: 800; box-shadow: inset 0 -3px #251b3210; transition: transform 120ms, filter 120ms, outline-color 120ms; user-select: none; }
+.pad .icon { font: 800 1.55rem/1.1 system-ui, sans-serif; }
+.pad kbd { position: absolute; right: 7px; top: 5px; opacity: .73; font: 600 .72rem ui-monospace, monospace; }
+.pad:not(:disabled):active, .pad.hit { transform: translateY(2px); filter: saturate(1.45); outline: 2px solid var(--key-ink); outline-offset: -3px; }
+.pad:disabled:not(.hit) { opacity: .67; }
+.brake { --key-bg:#fff0c8; --key-border:#edcd81; --key-ink:#684606; }
+.boom { --key-bg:#ffded8; --key-border:#f1b0a6; --key-ink:#8a2c32; }
+.clap { --key-bg:#d8f0d4; --key-border:#aed5a7; --key-ink:#325c2c; }
+.sting { --key-bg:#ebe0ff; --key-border:#cdb8f1; --key-ink:#543285; }
+.ding { --key-bg:#d9eff9; --key-border:#afd4e4; --key-ink:#2f5268; }
+.meow { --key-bg:#f9e0f0; --key-border:#e9b5d5; --key-ink:#77375f; }
+.transport { margin-top: 15px; }
+.transport .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.transport button { flex: 1 1 auto; padding: 8px 13px; border-radius: 10px; font-size: .96rem; font-weight: 800; }
+.primary { color: #fff; background: var(--purple); border: 1px solid var(--purple); }
+.primary:hover:not(:disabled) { background: var(--purple-dark); }
+.primary:disabled { background: #ede6f6; color: #5f4a77; border-color: #e6daef; }
+.secondary { border: 1px solid var(--line); background: #f8f3fd; color: #462872; }
+#hint { margin-top: 8px; min-height: 1.5em; font-size: .86rem; color: var(--subtle); }
+#hint.error { color: #8a2c32; }
+@media (max-width: 740px) {
+  main { width: min(510px, 100% - 28px); padding-top: 17px; }
+  header { margin-bottom: 14px; }
+  h1 { font-size: clamp(2.1rem, 8vw, 2.5rem); }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .board { padding: 11px; }
+  .pads { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+  .pad { min-height: 58px; }
+  .pad .icon { font-size: 1.35rem; }
+  .frame-head, .frame-foot { padding: 6px 11px; min-height: 34px; }
+  .transport { margin-top: 10px; }
+}
+@media (pointer: coarse) { .pad kbd { display: none; } }
+@media (prefers-reduced-motion: reduce) { .pad { transition: none; } }
+</style>
+<script defer src="scene.js"></script>
+<script defer src="video.js"></script>
+<script defer src="game.js"></script>
+</head>
+<body data-mode="idle">
+<main>
+  <header>
+    <div class="title-row">
+      <h1>给这段<span>乱配音</span></h1>
+      <div class="import-actions">
+        <button class="primary" type="button" id="choose-video">导入视频</button>
+        <button class="secondary" type="button" id="use-sample" hidden>用示例</button>
+        <input id="video-file" type="file" accept="video/*,.mp4,.webm,.mov,.m4v" hidden>
+      </div>
+    </div>
+    <p>导入视频自动配出音效键，也可以先拿猫猫短片练手。</p>
+    <p id="import-status" role="status" hidden></p>
+  </header>
+  <div class="layout">
+    <section class="player" aria-label="配音画面">
+      <div class="frame-head"><span id="clip-title">猫和杯子</span><span id="mode-label">循环预览</span></div>
+      <canvas id="scene" width="960" height="540" role="img" aria-label="一只黑猫伸爪推杯子，杯子滑过桌沿掉到地上，猫回头看镜头。">一只黑猫把杯子推下桌，然后回头看镜头。</canvas>
+      <div class="imported" id="imported" hidden></div>
+      <div class="frame-foot" aria-hidden="true">
+        <div class="track"><div class="rail"><div class="fill" id="fill"></div></div><div class="marker-layer" id="markers"></div></div>
+        <span class="seconds" id="clock">0.0 / 8.0</span>
+      </div>
+    </section>
+    <section class="board" aria-label="音效台">
+      <div class="board-head"><h2>音效台</h2><p id="pad-hint">点一下就能试听</p></div>
+      <div class="pads" id="pads">
+        <button type="button" class="pad" aria-keyshortcuts="1"><span class="icon" aria-hidden="true"></span><span class="pad-name"></span><kbd aria-hidden="true">1</kbd></button>
+        <button type="button" class="pad" aria-keyshortcuts="2"><span class="icon" aria-hidden="true"></span><span class="pad-name"></span><kbd aria-hidden="true">2</kbd></button>
+        <button type="button" class="pad" aria-keyshortcuts="3"><span class="icon" aria-hidden="true"></span><span class="pad-name"></span><kbd aria-hidden="true">3</kbd></button>
+        <button type="button" class="pad" aria-keyshortcuts="4"><span class="icon" aria-hidden="true"></span><span class="pad-name"></span><kbd aria-hidden="true">4</kbd></button>
+        <button type="button" class="pad" aria-keyshortcuts="5"><span class="icon" aria-hidden="true"></span><span class="pad-name"></span><kbd aria-hidden="true">5</kbd></button>
+        <button type="button" class="pad" aria-keyshortcuts="6"><span class="icon" aria-hidden="true"></span><span class="pad-name"></span><kbd aria-hidden="true">6</kbd></button>
+      </div>
+      <div class="transport">
+        <div class="buttons">
+          <button class="primary" type="button" id="main-action">开始配音 · 8 秒</button>
+          <button class="secondary" type="button" id="retry" hidden>再录一遍</button>
+        </div>
+        <p id="hint" role="status">试试杯子一落地，就按「爆炸」。</p>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>圆角与投影 · 边界优先 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .radii { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
+  .r { display: grid; gap: var(--space-1); }
+  .r i { display: block; height: 72px; border: 1px solid var(--line-strong); background: var(--surface-sunken); border-radius: var(--radius); }
+  .r code { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
+  .r span { color: var(--ink-muted); font-family: var(--font-mono); font-size: 10px; }
+  .shadows { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); margin-top: var(--space-2); }
+  .sh { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+  .sh b { display: block; font-size: var(--text-small); }
+  .sh small { color: var(--ink-muted); font-family: var(--font-mono); font-size: 10px; }
+  .sh.float { box-shadow: var(--shadow-float); border-color: transparent; }
+  .sh.panel { box-shadow: var(--shadow-panel); border-color: transparent; }
+  .stamp-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+  .stamp { display: grid; place-items: center; width: 29px; height: 29px; border-radius: var(--radius-xs); color: #f6e8d6; background: #87332a; border: 1px solid #b45b47; font: 700 1.1rem var(--font-serif); }
+  .emblem { display: inline-grid; place-items: center; width: 25px; height: 25px; border-radius: var(--radius-xs); color: #fff; font: 700 1rem var(--font-serif); background: var(--bg-emblem, #766044); }
+  .emblem.wei { --bg-emblem: #4c5762; }
+  .emblem.shu { --bg-emblem: #42624f; }
+  .emblem.wu { --bg-emblem: #8f4634; }
+  .emblem.jin { --bg-emblem: #755367; }
+  .diamond { width: 10px; height: 10px; border: 2px solid var(--accent); transform: rotate(45deg); }
+  .note { margin-top: var(--space-3); color: var(--ink-muted); font-size: var(--text-small); }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>圆角与投影 · 边界优先</h1>
+  <p class="card-source">来源：index.html:31,44 · story-stock/style.css:32,63,77 · dub-it/index.html:62</p>
+</header>
+
+<main>
+  <section class="panel" data-world="paper">
+    <p class="eyebrow">tokens.css · --radius-*</p>
+    <h2>四级圆角</h2>
+    <div class="radii">
+      <div class="r"><i style="--radius:4px"></i><code>--radius-xs</code><span>4px · 印章 / kbd</span></div>
+      <div class="r"><i style="--radius:6px"></i><code>--radius-sm</code><span>6px · 选项行 / 凹槽</span></div>
+      <div class="r"><i style="--radius:8px"></i><code>--radius-md</code><span>8px · fieldset / ticker</span></div>
+      <div class="r"><i style="--radius:12px"></i><code>--radius-lg</code><span>12px · 面板</span></div>
+      <div class="r"><i style="--radius:17px"></i><code>--radius-xl</code><span>17px · 播放器 / 键板</span></div>
+    </div>
+    <p class="note">同屏最多三级圆角：面板 12 → 区块 8 → 控件 4–6。圆角不随字号缩放。</p>
+  </section>
+
+  <section class="panel" style="margin-top: var(--space-4);" data-world="lilac">
+    <p class="eyebrow">tokens.css · --shadow-*</p>
+    <h2>投影只给漂浮的板</h2>
+    <div class="shadows">
+      <div class="sh"><b>--shadow-none</b><small>默认：1px 描边分层</small></div>
+      <div class="sh panel"><b>--shadow-panel</b><small>0 10px 30px #3429530c</small></div>
+      <div class="sh float"><b>--shadow-float</b><small>0 12px 30px #3429531a</small></div>
+    </div>
+    <p class="note">夜色世界不用投影，只用灯光辉光 <code>--shadow-glow-amber</code>。</p>
+  </section>
+
+  <section class="panel" style="margin-top: var(--space-4);">
+    <p class="eyebrow">图形语言</p>
+    <h2>印章、徽记、菱形</h2>
+    <div class="stamp-row">
+      <span class="stamp" aria-hidden="true">易</span>
+      <span class="emblem wei" aria-hidden="true">曹</span>
+      <span class="emblem shu" aria-hidden="true">刘</span>
+      <span class="emblem wu" aria-hidden="true">孙</span>
+      <span class="emblem jin" aria-hidden="true">晋</span>
+      <span class="diamond" aria-hidden="true"></span>
+      <span style="font-weight:var(--weight-bold);letter-spacing:var(--tracking-brand)">弹幕侦探</span>
+    </div>
+    <p class="note">品牌标记 = 10px 方块旋转 45° + 2px 强调描边；势力徽记 = 25px / 4px 圆角 / 宋体粗字。两者都不使用 emoji。</p>
+  </section>
+</main>
+
+<footer class="card-foot">preview/radius-shadows.html · 单屏玩具设计系统</footer>
+</body>
+</html>

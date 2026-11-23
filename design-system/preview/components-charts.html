@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>组件 · 走势与剧情 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .card { padding: var(--panel-pad); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+  .chart-head { display: flex; align-items: start; justify-content: space-between; gap: var(--space-2); }
+  .chart-head h2 { margin: 0; font-size: 1.06rem; }
+  .chart-head p { margin: 3px 0 0; color: var(--ink-muted); font-size: var(--text-small); }
+  .legend { display: flex; gap: var(--space-2-5); color: var(--ink-muted); font-size: var(--text-small); }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend i { width: 8px; height: 8px; border-radius: 1px; }
+  .up { background: var(--market-up); } .down { background: var(--market-down); }
+  .plot { display: grid; grid-template-columns: minmax(0, 1fr) 38px; margin: var(--space-4) 0 var(--space-2-5); }
+  .chart-grid, .chart-axis { grid-area: 1 / 1; position: relative; height: 174px; }
+  .chart-axis { grid-column: 2; color: var(--ink-muted); font-size: var(--text-micro); font-variant-numeric: tabular-nums; }
+  .axis-price { position: absolute; top: var(--tick); right: 0; transform: translateY(-50%); }
+  .grid-line { position: absolute; top: var(--tick); width: 100%; border-top: 1px solid var(--line); }
+  .candle-grid { display: grid; grid-template-columns: repeat(var(--count), minmax(0, 1fr)); grid-area: 1 / 1; z-index: 1; }
+  .candle-button { position: relative; height: 202px; min-width: 0; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--ink-muted); cursor: pointer; }
+  .candle-button:hover { background: #aa7e3220; }
+  .candle-button[aria-pressed="true"] { background: #aa7e3214; }
+  .candle-button:focus-visible { outline: var(--focus-ring); outline-offset: 0; z-index: 2; }
+  .candle-stick { position: absolute; inset: 0 0 28px; }
+  .candle-stick::before, .candle-stick::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); }
+  .candle-stick::before { top: var(--wick-top); height: var(--wick-height); width: 1px; background: var(--candle); }
+  .candle-stick::after { top: var(--body-top); height: max(2px, var(--body-height)); width: min(30px, 54%); border-radius: 1px; background: var(--candle); }
+  .candle-year { position: absolute; bottom: 0; inset-inline: 0; font-size: var(--text-micro); line-height: 22px; text-align: center; }
+  .candle-button[aria-pressed="true"] .candle-year { color: #78501f; font-weight: var(--weight-bold); }
+  .chart-detail { padding: 11px 12px; border-radius: var(--radius-sm); background: var(--surface-sunken); }
+  .candle-event { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--space-2); }
+  .candle-event time { color: #78501f; font-size: var(--text-small); font-weight: var(--weight-bold); }
+  .candle-event h3 { margin: 0; font-size: 0.9375rem; }
+  .ohlc { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin: 5px 0; font-variant-numeric: tabular-nums; }
+  .ohlc div { display: flex; align-items: baseline; gap: 5px; font-size: var(--text-small); }
+  .ohlc dt { color: var(--ink-muted); }
+  .ohlc dd { margin: 0; font-weight: var(--weight-bold); }
+  .candle-note { margin: 0; color: var(--ink-muted); font-size: var(--text-small); }
+  .story { border-top: 3px solid #966639; }
+  .story-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+  .phase { padding: 3px 8px; border-radius: var(--radius-xs); background: var(--accent-soft); color: #714b24; font-size: var(--text-small); font-weight: var(--weight-bold); }
+  .round-label { color: var(--ink-muted); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
+  progress { display: block; width: 100%; height: 5px; margin: var(--space-3) 0 var(--space-4); border: none; border-radius: var(--radius-xs); background: #eee8dd; overflow: hidden; }
+  .story h2 { margin: var(--space-1) 0 var(--space-1-5); font: 800 clamp(1.35rem, 3vw, 1.7rem)/1.3 var(--font-serif); letter-spacing: var(--tracking-serif); }
+  .story p { margin: 0; color: var(--ink-muted); font-size: 0.9375rem; }
+  .impact { display: flex; flex-wrap: wrap; gap: var(--space-1-5); margin-top: var(--space-2-5); }
+  .impact span { padding: 3px 7px; border-radius: 5px; background: var(--surface-sunken); font-size: 0.8125rem; }
+  .spark { display: block; width: 100%; height: 96px; margin-top: var(--space-2); color: #3c6070; }
+  .spark-note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px var(--space-2); margin-top: 6px; color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); font-variant-numeric: tabular-nums; }
+  .spark-note b { color: var(--ink); font-weight: var(--weight-bold); }
+  .section-line { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2-5); }
+  .section-line h2 { margin: 0; font-size: 1.06rem; }
+  .section-line span { color: var(--ink-muted); font-size: var(--text-small); }
+  .strip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+  .strip-grid > div { padding: var(--space-2-5) var(--space-3); }
+  .strip-grid > div + div { border-left: 1px solid var(--line); }
+  .strip-grid span { display: block; color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-eyebrow); }
+  .strip-grid strong { display: block; margin-top: 3px; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .val-up { color: var(--market-up); }
+  .val-down { color: var(--market-down); }
+  .tabs-demo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunken); }
+  .tabs-demo button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: var(--control-min); padding: 4px 8px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--text-small); font-weight: var(--weight-medium); cursor: pointer; }
+  .tabs-demo button[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--line-strong); box-shadow: inset 0 -2px var(--accent); }
+  .tab-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .tape-demo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); width: 100%; min-height: var(--control-min); margin-top: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); font: inherit; text-align: left; cursor: pointer; }
+  .tape-demo strong { flex: 1 1 8em; font-size: var(--text-body); font-weight: var(--weight-bold); }
+  .tape-meta { color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); font-variant-numeric: tabular-nums; }
+  .tape-next { color: var(--ink-muted); font-size: var(--text-small); }
+  .tape-jump { margin-left: auto; color: var(--accent); font-size: var(--text-small); font-weight: var(--weight-medium); }
+  .archive-demo { margin: var(--space-2-5) 0 0; padding: 0; list-style: none; display: grid; }
+  .archive-demo li { display: grid; grid-template-columns: 3em minmax(0, 1fr) auto auto; align-items: baseline; gap: var(--space-1) var(--space-2); padding: 9px var(--space-2); border-top: 1px solid var(--line); font-size: var(--text-small); }
+  .archive-demo li:first-child { border-top: 0; }
+  .archive-demo li[data-state="current"] { border-radius: var(--radius-xs); background: var(--accent-soft); }
+  .archive-demo time { color: var(--ink-muted); font: var(--text-micro) var(--font-mono); font-variant-numeric: tabular-nums; }
+  .archive-demo strong { font-weight: var(--weight-bold); }
+  .archive-demo span { color: var(--ink-muted); font-size: var(--text-micro); white-space: nowrap; }
+  .archive-demo li[data-state="current"] span:last-child { color: var(--accent); font-weight: var(--weight-bold); }
+  .phase.live { color: var(--state-good); background: var(--state-good-soft); }
+  .story-clock-demo { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-3); padding: 10px 12px; border: 1px solid var(--state-good-soft); border-radius: var(--radius-sm); background: var(--surface-sunken); }
+  .story-clock-demo span { color: var(--ink-muted); font-size: var(--text-small); }
+  .story-clock-demo strong { color: var(--state-good); font-family: var(--font-mono); font-size: var(--text-body); font-variant-numeric: tabular-nums; }
+  .tape-clock-demo { padding: 2px 7px; border: 1px solid var(--state-good-soft); border-radius: var(--radius-xs); color: var(--state-good); font-family: var(--font-mono); font-size: var(--text-micro); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .receipts { margin: var(--space-1) 0 0; padding: 0; list-style: none; display: grid; gap: var(--space-1-5); }
+  .receipt { display: flex; justify-content: space-between; gap: var(--space-2-5); padding: 9px 0; border-top: 1px solid var(--line); }
+  .receipt:first-child { border-top: 0; }
+  .receipt-meta strong { display: block; font-size: var(--text-small); }
+  .receipt-meta span { color: var(--ink-muted); font-size: var(--text-micro); font-variant-numeric: tabular-nums; }
+  .receipt-amount { flex: none; font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+  .closing { border-top: 3px solid var(--story-rule); }
+  .closing h2 { margin: var(--space-1) 0 var(--space-1-5); font-family: var(--font-serif); }
+  .closing-lede { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--text-small); line-height: 1.7; }
+  .closing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2-5) var(--space-3); margin: 0 0 var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .closing-grid > div:first-child { grid-column: span 2; }
+  .closing-grid dt { color: var(--ink-muted); font-size: var(--text-small); }
+  .closing-grid dd { margin: 0; font-size: clamp(1rem, 2.1vw, 1.2rem); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+  .closing-actions { display: flex; gap: var(--space-2); }
+  .closing-actions .primary-demo { flex: 1; min-height: var(--control-min); padding: 8px 14px; border: 1px solid var(--accent); border-radius: 7px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: var(--weight-bold); cursor: pointer; }
+  @media (max-width: 640px) { .plot { grid-template-columns: minmax(0, 1fr); } .chart-axis { display: none; } }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>组件 · 走势与剧情</h1>
+  <p class="card-source">来源：story-stock/style.css:113–180 · quote-chart.js · market.js · story.js；组合实现见 ui_kits/app 的 RoundStrip · MarketTabs · EventTape · StoryBeat · PriceBoard · TradeReceipt · ClosingSummary</p>
+</header>
+
+<main style="display: grid; gap: var(--space-4);">
+  <section class="card" data-world="paper">
+    <p class="eyebrow">对局状态条 · RoundStrip</p>
+    <div class="strip-grid" role="group" aria-label="对局状态">
+      <div><span>回合</span><strong>第 1 / 9 节</strong></div>
+      <div><span>纪年</span><strong>公元 200 年</strong></div>
+      <div><span>下一事件</span><strong>邺城陷落</strong></div>
+      <div><span>倒计时</span><strong>24 秒</strong></div>
+      <div><span>总资产</span><strong>12,663 铜钱</strong></div>
+      <div><span>收益率</span><strong class="val-up">+26.6%</strong></div>
+    </div>
+  </section>
+
+  <section class="card" data-world="paper">
+    <div class="section-line"><h2>栏目标签与事件快报</h2><span>示例对局 · 进行中</span></div>
+    <div class="tabs-demo" role="tablist" aria-label="交易所栏目">
+      <button type="button" role="tab" aria-selected="true">市场</button>
+      <button type="button" role="tab" aria-selected="false" tabindex="-1">交易</button>
+      <button type="button" role="tab" aria-selected="false" tabindex="-1">持仓</button>
+      <button type="button" role="tab" aria-selected="false" tabindex="-1">资讯 <span class="tab-dot" aria-hidden="true"></span></button>
+    </div>
+    <button class="tape-demo" type="button" aria-label="打开资讯栏目：公元 200 年 · 官渡决胜">
+      <span class="phase live">盘中</span>
+      <span class="tape-meta">公元 200 年 · 官渡</span>
+      <strong>官渡决胜</strong>
+      <span class="tape-clock-demo">下一节 24 秒</span>
+      <span class="tape-next">下一节 · 邺城陷落</span>
+      <span class="tape-jump">看资讯 ›</span>
+    </button>
+    <ol class="archive-demo" aria-label="事件档案">
+      <li data-state="current"><time>200</time><strong>官渡决胜</strong><span>进行中</span><span>118.0</span></li>
+      <li><time>204</time><strong>邺城陷落</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>207</time><strong>三顾茅庐</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>208</time><strong>荆州易主</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>208</time><strong>赤壁之战</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>214</time><strong>益州归刘</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>219</time><strong>汉中称王</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>249</time><strong>高平陵之变</strong><span>待揭晓</span><span>—</span></li>
+      <li><time>280</time><strong>三国归晋</strong><span>待揭晓</span><span>—</span></li>
+    </ol>
+  </section>
+
+  <section class="card" data-world="paper">
+    <div class="chart-head">
+      <div><h2>势力 K 线</h2><p>示例剧情 · 9 个事件节点</p></div>
+      <div class="legend" aria-label="图例"><span><i class="up"></i>涨</span><span><i class="down"></i>跌</span></div>
+    </div>
+    <div class="plot">
+      <div class="chart-grid" aria-hidden="true">
+        <div class="grid-line" style="--tick:18%"></div>
+        <div class="grid-line" style="--tick:58%"></div>
+        <div class="grid-line" style="--tick:98%"></div>
+        <div class="candle-grid" style="--count:9">
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-up);--wick-top:44%;--wick-height:44%;--body-top:52%;--body-height:26%"></span>
+            <span class="candle-year">199</span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-up);--wick-top:30%;--wick-height:40%;--body-top:38%;--body-height:22%"></span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="true">
+            <span class="candle-stick" style="--candle:var(--market-down);--wick-top:22%;--wick-height:34%;--body-top:26%;--body-height:20%"></span>
+            <span class="candle-year">200</span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-up);--wick-top:50%;--wick-height:32%;--body-top:56%;--body-height:18%"></span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-down);--wick-top:62%;--wick-height:30%;--body-top:64%;--body-height:20%"></span>
+            <span class="candle-year">208</span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-up);--wick-top:36%;--wick-height:34%;--body-top:42%;--body-height:22%"></span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-down);--wick-top:24%;--wick-height:38%;--body-top:30%;--body-height:24%"></span>
+            <span class="candle-year">219</span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-down);--wick-top:34%;--wick-height:44%;--body-top:40%;--body-height:30%"></span>
+          </button>
+          <button class="candle-button" type="button" aria-pressed="false">
+            <span class="candle-stick" style="--candle:var(--market-down);--wick-top:48%;--wick-height:36%;--body-top:54%;--body-height:24%"></span>
+            <span class="candle-year">280</span>
+          </button>
+        </div>
+      </div>
+      <div class="chart-axis" aria-label="价格刻度">
+        <span class="axis-price" style="--tick:18%">160</span>
+        <span class="axis-price" style="--tick:58%">110</span>
+        <span class="axis-price" style="--tick:98%">60</span>
+      </div>
+    </div>
+    <div class="chart-detail">
+      <div class="candle-event"><time datetime="0200">200 年</time><h3>官渡决胜与孙权继位</h3></div>
+      <dl class="ohlc">
+        <div><dt>开</dt><dd>126.0</dd></div>
+        <div><dt>高</dt><dd>134.5</dd></div>
+        <div><dt>低</dt><dd>118.2</dd></div>
+        <div><dt>收</dt><dd>120.4</dd></div>
+      </dl>
+      <p class="candle-note">曹操火烧乌巢，袁绍退走；同一节点，孙权接掌江东。</p>
+    </div>
+  </section>
+
+  <section class="card story" data-world="paper">
+    <div class="story-head"><p class="phase live">盘中</p><p class="round-label">第 5 / 9 节</p></div>
+    <progress value="5" max="9" aria-label="故事进度"></progress>
+    <p class="eyebrow" style="margin-bottom: 4px;">赤壁 · 公元 208 年</p>
+    <h2>赤壁之战</h2>
+    <p>孙刘联军以火攻破曹，江面一炬，天下三分。</p>
+    <div class="impact"><span>曹氏 −4.6%</span><span>刘氏 +5.4%</span><span>孙氏 +2.8%</span></div>
+    <div class="story-clock-demo"><span>下一事件 · 益州归刘</span><strong>24 秒</strong></div>
+    <p class="candle-note" style="margin-top: var(--space-2);">示例剧情节选 · 共 9 节，按实盘时钟自动推进；数字不构成投资建议。</p>
+  </section>
+
+  <section class="card" data-world="paper">
+    <div class="chart-head"><div><h2>分时走势</h2><p>最近 60 秒 · 逐秒抖动 · 示例行情</p></div><div style="text-align:right"><strong style="font-size:1.3rem;font-variant-numeric:tabular-nums">112.6</strong><br><span style="color:var(--ink-muted);font-size:0.8125rem">铜钱 / 股</span></div></div>
+    <svg class="spark" viewBox="0 0 300 96" role="img" aria-label="刘氏最近六十秒分时线，整体上行">
+      <polyline points="0,72 20,68 40,74 60,60 80,55 100,62 120,48 140,44 160,50 180,38 200,34 220,42 240,28 260,24 280,18 300,22" fill="none" stroke="currentColor" stroke-width="2"></polyline>
+    </svg>
+    <div class="spark-note"><span>60 秒前</span><span>最高 <b>114.2</b> · 最低 <b>109.8</b></span><span>最近 <b>112.6</b></span><span>现在</span></div>
+  </section>
+
+  <section class="card" data-world="paper">
+    <div class="section-line"><h2>成交回执</h2><span>2 笔 · 最近在前</span></div>
+    <ol class="receipts">
+      <li class="receipt">
+        <div class="receipt-meta"><strong>第 2 节 · 卖出 刘氏 5 股</strong><span>成交价 124.4 · 手续费 4 铜钱</span></div>
+        <span class="receipt-amount">+618 铜钱</span>
+      </li>
+      <li class="receipt">
+        <div class="receipt-meta"><strong>第 1 节 · 买入 刘氏 10 股</strong><span>成交价 118.0 · 手续费 6 铜钱</span></div>
+        <span class="receipt-amount">−1,186 铜钱</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card closing" data-world="paper">
+    <p class="eyebrow">收盘 · 公元 280 年</p>
+    <h2>三国归晋</h2>
+    <p class="closing-lede">交易所鸣钟收盘。这一局，你的铜钱比开局更多。</p>
+    <dl class="closing-grid">
+      <div><dt>期末总资产</dt><dd>11,048 铜钱</dd></div>
+      <div><dt>本局收益率</dt><dd class="val-up">+10.5%</dd></div>
+      <div><dt>最高资产</dt><dd>12,735 铜钱</dd></div>
+      <div><dt>成交次数</dt><dd>0 次</dd></div>
+      <div><dt>累计手续费</dt><dd>0 铜钱</dd></div>
+    </dl>
+    <div class="closing-actions">
+      <button class="primary-demo" type="button">再开一局</button>
+      <button class="primary-demo" type="button" style="background: transparent; color: var(--ink); border-color: var(--line-strong);">回到案件</button>
+    </div>
+    <p class="candle-note" style="margin-top: var(--space-2);">示例对局：9 节剧情、10,000 铜钱本金、0.5% 手续费。</p>
+  </section>
+
+</main>
+
+<footer class="card-foot">preview/components-charts.html · 单屏玩具设计系统</footer>
+</body>
+</html>

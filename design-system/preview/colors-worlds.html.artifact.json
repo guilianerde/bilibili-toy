@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/colors-worlds.html",
+  "entry": "preview/colors-worlds.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:30:10.552Z",
+  "updatedAt": "2026-11-22T16:30:10.552Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

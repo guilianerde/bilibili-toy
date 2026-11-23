@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>品牌资源 · 仅有的真实素材 | 单屏玩具</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .asset { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr); padding: var(--panel-pad); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+  .asset h2 { margin: 0; font-size: var(--text-title); }
+  .asset .meta { color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); font-variant-numeric: tabular-nums; }
+  .banner {
+    aspect-ratio: 1600 / 533;
+    width: 100%;
+    border: 1px solid #655345;
+    border-radius: var(--radius-lg);
+    background: #2a241d url("../assets/han-river.jpg") 58% 53% / cover;
+    display: flex;
+    align-items: center;
+    padding: clamp(16px, 3vw, 40px);
+    color: #fff4e3;
+  }
+  .banner-inner { display: grid; gap: var(--space-1); }
+  .banner-note { display: flex; align-items: center; gap: 9px; color: #f4c997; font-size: var(--text-small); margin: 0; }
+  .banner-note i { width: 16px; height: 1px; background: currentColor; opacity: 0.6; }
+  .banner h3 { margin: 0; font: 800 clamp(1.6rem, 4vw, 3rem)/1.24 var(--font-serif); letter-spacing: var(--tracking-serif); }
+  .banner p { margin: 0; color: #f3e5d2; font-size: var(--text-small); }
+  .marks { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-3); }
+  .mark { display: flex; align-items: center; gap: var(--space-2-5); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+  .diamond { width: 10px; height: 10px; border: 2px solid var(--accent); transform: rotate(45deg); flex: none; }
+  .diamond.dark { border-color: #f4ce79; }
+  .mark b { font-size: var(--text-small); letter-spacing: var(--tracking-brand); }
+  .stamp { display: grid; place-items: center; width: 29px; height: 29px; border-radius: var(--radius-xs); color: #f6e8d6; background: #87332a; border: 1px solid #b45b47; font: 700 1.1rem var(--font-serif); flex: none; }
+  .emblem { display: inline-grid; place-items: center; width: 25px; height: 25px; border-radius: var(--radius-xs); color: #fff; font: 700 1rem var(--font-serif); flex: none; }
+  .emblem.shu { background: #42624f; } .emblem.wei { background: #4c5762; } .emblem.wu { background: #8f4634; }
+  .file-list { margin: var(--space-2) 0 0; padding-left: 1.1em; color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-micro); }
+  .file-list li { margin-bottom: 3px; }
+  .callout { margin-top: var(--space-4); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--ink-muted); font-size: var(--text-small); }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <h1>品牌资源 · 仅有的真实素材</h1>
+  <p class="card-source">assets/han-river.jpg · assets/bilibili-toy-original.zip · 来源 story-stock/style.css:39</p>
+</header>
+
+<main style="display: grid; gap: var(--space-4);">
+  <section class="asset" data-world="paper">
+    <h2>三国交易所 · 横幅照片</h2>
+    <p class="meta">assets/han-river.jpg · 1600 × 533 · JPEG · 用于 hero 底图</p>
+    <div class="banner">
+      <div class="banner-inner">
+        <p class="banner-note">《三国演义》<i></i>公元 184–280 年</p>
+        <h3>三国交易所</h3>
+        <p>从诸侯会盟到三国归晋，买卖十一家势力。</p>
+      </div>
+    </div>
+    <p style="margin:0;color:var(--ink-muted);font-size:var(--text-small);">容器按图片原始比例 1600/533 设 aspect-ratio，覆盖裁切只用于这种可裁的横幅底图；卡片内容图不裁。</p>
+  </section>
+
+  <section class="panel" data-world="paper">
+    <p class="eyebrow">三个玩具都没有独立 logo / 图标文件</p>
+    <h2>可复现的文字标记</h2>
+    <p>品牌识别由「菱形 + 四字」与「印章 + 产品名」两组文字标记承担；它们是 CSS 规则，而不是位图资产。</p>
+    <div class="marks" style="margin-top: var(--space-3);">
+      <div class="mark" data-world="night"><span class="diamond dark" aria-hidden="true"></span><b>弹幕侦探</b></div>
+      <div class="mark"><span class="diamond" aria-hidden="true"></span><b>故事炒股模拟器</b></div>
+      <div class="mark"><span class="stamp" aria-hidden="true">易</span><b>三国交易所</b></div>
+      <div class="mark"><span class="emblem wu" aria-hidden="true">孙</span><b>势力徽记 · 4px 圆角宋体</b></div>
+    </div>
+    <ul class="file-list">
+      <li>assets/han-river.jpg — 唯一照片素材</li>
+      <li>assets/bilibili-toy-original.zip — 源工程原始单文件包</li>
+      <li>source_examples/ — 三个玩具的原样 HTML / CSS / JS</li>
+    </ul>
+    <p class="callout">没有字体文件、没有安装包图标、没有托盘图标。系统字体栈即为最终字体方案；不要为这套设计系统生造 logo 位图。</p>
+  </section>
+</main>
+
+<footer class="card-foot">preview/brand-assets.html · 单屏玩具设计系统</footer>
+</body>
+</html>

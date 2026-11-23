@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/components-controls.html",
+  "entry": "preview/components-controls.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-11-22T16:32:47.323Z",
+  "updatedAt": "2026-11-22T16:32:47.323Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}
