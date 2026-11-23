@@ -16,6 +16,7 @@ let side;
 let openedAt = null;
 let timer;
 let displayedPrice;
+let revealedCount = 0;
 
 const tickers = factions.map((faction, index) => {
   const button = document.createElement("button");
@@ -23,17 +24,7 @@ const tickers = factions.map((faction, index) => {
   button.className = "ticker";
   button.innerHTML = `<span class="faction"><span class="emblem ${faction.id}" aria-hidden="true">${faction.mark}</span>${faction.name}</span>
     <span class="ticker-quote"><b></b><span class="change"></span></span>`;
-  button.addEventListener("click", () => {
-    if (selected === index) return;
-    selected = index;
-    candleIndex = null;
-    candleGrid.replaceChildren();
-    $("trade-status").textContent = "";
-    renderTickers();
-    renderQuoteChart();
-    renderChart();
-    renderOrder();
-  });
+  button.addEventListener("click", () => selectFaction(index));
   $("tickers").append(button);
   return button;
 });
@@ -47,6 +38,26 @@ plot.querySelector(".chart-grid").innerHTML = ticks.map((tick) =>
   `<i class="grid-line" style="--tick:${tick * 25}%"></i>`).join("");
 chartAxis.innerHTML = ticks.map((tick) =>
   `<span class="axis-price" style="--tick:${tick * 25}%"></span>`).join("");
+
+const factionSelect = $("faction-select");
+factionSelect.innerHTML = factions.map((faction, index) =>
+  `<option value="${index}">${faction.name}</option>`).join("");
+factionSelect.value = "0";
+
+function selectFaction(index) {
+  if (index === selected) return;
+  selected = index;
+  candleIndex = null;
+  candleGrid.replaceChildren();
+  $("trade-status").textContent = "";
+  factionSelect.value = String(index);
+  renderTickers();
+  renderLiveStatus();
+  renderQuoteChart();
+  renderChart();
+  renderOrder();
+  renderArchive();
+}
 
 function finished() {
   return market.tick === totalTicks;
@@ -67,7 +78,59 @@ function renderTickers() {
     badge.className = "change " + tone(change);
     badge.textContent = price > 0 ? percent(change) : priceStatus(price);
   });
+  if (factionSelect.value !== String(selected)) factionSelect.value = String(selected);
   $("market-status").textContent = "铜钱 / 股 · " + (finished() ? "已收盘" : active + " 家已挂牌");
+}
+
+function renderLiveStatus() {
+  const stock = market.stocks[selected];
+  const price = currentPrice(stock);
+  $("status-faction").textContent = stock.faction.name + (stock.shares > 0 ? " · 持仓 " + format(stock.shares) : "");
+  $("status-price").textContent = price === null ? "待挂牌" : price === 0 ? "已退市" : format(price) + " / 股";
+  const equity = assetValue(market);
+  $("status-equity").textContent = "总资产 " + format(equity);
+  $("status-equity").className = tone(equity - startingCash);
+  $("status-countdown").textContent = finished() ? "已收盘" :
+    openedAt === null ? "待开盘" : "下条军情 " + (ticksPerEvent - market.tick % ticksPerEvent) + " 秒";
+}
+
+function renderTape() {
+  const revealed = Math.floor(market.tick / ticksPerEvent);
+  const latest = revealed > 0 ? story[revealed - 1] : null;
+  const upcoming = story[revealed] ?? null;
+  const current = latest ?? upcoming ?? story[0];
+  const phase = finished() ? "已收盘" : openedAt === null ? "待开盘" : "盘中";
+  $("tape-phase").textContent = phase;
+  $("tape-phase").dataset.phase = finished() ? "closed" : openedAt === null ? "preopen" : "live";
+  $("tape-when").textContent = current.year + " 年 · " + current.where;
+  $("tape-title").textContent = latest ? latest.title : "首条军情待揭晓";
+  $("tape-count").textContent = finished() || openedAt === null ? "" :
+    "下条军情 " + (ticksPerEvent - market.tick % ticksPerEvent) + " 秒";
+  $("tape-next").textContent = finished() ? "本局结束" :
+    openedAt === null ? "首节 · " + upcoming.preview : "下一节 · " + upcoming.preview;
+}
+
+function renderArchive() {
+  const revealed = Math.floor(market.tick / ticksPerEvent);
+  const stock = market.stocks[selected];
+  const rows = story.map((event, index) => {
+    const state = finished() || (openedAt !== null && index < revealed) ? "revealed" :
+      openedAt !== null && index === revealed ? "current" : "pending";
+    const candle = stock.candles.find((item) => item.event === event);
+    const price = state === "revealed" && candle ? (candle.close === 0 ? "退市" : format(candle.close)) : "—";
+    const status = state === "revealed" ? "已揭晓" : state === "current" ? "进行中" : "待揭晓";
+    return `<li class="archive-row" data-state="${state}">` +
+      `<time>${event.year}</time>` +
+      `<span class="archive-event">${event.title}</span>` +
+      `<span class="archive-meta"><span class="archive-status">${status}</span>` +
+      `<span class="archive-price">${price}</span></span>` +
+      `</li>`;
+  }).join("");
+  $("archive-list").innerHTML = rows;
+  $("archive-count").textContent = finished() ? story.length + " / " + story.length + " · 已收盘" :
+    openedAt === null ? "0 / " + story.length + " · 待开盘" :
+    revealed + " / " + story.length + " 已揭晓";
+  $("archive-note").textContent = "收盘价按 " + stock.faction.name + "；未挂牌记 —，退市当节记「退市」";
 }
 
 function renderLedger() {
@@ -79,9 +142,14 @@ function renderLedger() {
   $("return").className = tone(roi);
   $("fees-paid").textContent = format(market.fees);
 
-  const rows = market.stocks.filter((stock) => stock.shares > 0).map((stock) =>
-    `<tr><th scope="row">${stock.faction.name}</th><td>${format(stock.shares)} 股</td><td>${format(currentPrice(stock) * stock.shares)}</td></tr>`);
-  const positions = rows.join("") || '<tr><td colspan="3" class="empty-position">当前空仓</td></tr>';
+  const rows = market.stocks.filter((stock) => stock.shares > 0).map((stock) => {
+    const value = (currentPrice(stock) ?? 0) * stock.shares;
+    const pnl = value - stock.cost;
+    return `<tr><th scope="row">${stock.faction.name}</th><td>${format(stock.shares)}</td>` +
+      `<td>${format(stock.cost)}</td><td>${format(value)}</td>` +
+      `<td class="${tone(pnl)}" title="${format(pnl)} 铜钱">${stock.cost ? percent(pnl / stock.cost) : "—"}</td></tr>`;
+  });
+  const positions = rows.join("") || '<tr><td colspan="5" class="empty-position">当前空仓</td></tr>';
   if ($("positions").innerHTML !== positions) $("positions").innerHTML = positions;
 }
 
@@ -189,8 +257,28 @@ function renderClock() {
   }
 }
 
+function showToast({ label, title, items }) {
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  const head = document.createElement("p");
+  head.className = "toast-label";
+  head.textContent = label;
+  const name = document.createElement("strong");
+  name.textContent = title;
+  const list = document.createElement("p");
+  list.className = "toast-items";
+  list.textContent = items.join(" · ");
+  toast.append(head, name, list);
+  const container = $("toasts");
+  container.append(toast);
+  while (container.children.length > 2) container.firstElementChild.remove();
+  setTimeout(() => toast.remove(), 6000);
+}
+
 function renderStory() {
+  const previousRevealed = revealedCount;
   const revealed = Math.floor(market.tick / ticksPerEvent);
+  revealedCount = revealed;
   const latest = story[revealed - 1] ?? prologue.at(-1);
   const event = story[revealed] ?? latest;
   const isOpen = openedAt !== null && !finished();
@@ -205,26 +293,46 @@ function renderStory() {
     $("news-date").textContent = "最新军情 · " + latest.year + " 年";
     $("news-title").textContent = latest.title;
     $("news-copy").textContent = latest.outcome;
-    $("impact").innerHTML = market.news.map(({ faction, before, after }) => {
+    const impacts = market.news.map(({ faction, before, after }) => {
       const change = before ? (after - before) / before : 0;
-      const label = after === 0 ? "退市" : before === null ? "挂牌 " + format(after) : percent(change);
-      return `<span class="impact-item">${faction.name} <strong class="${tone(change)}">${label}</strong></span>`;
-    }).join("");
+      const stock = market.stocks.find((item) => item.faction === faction);
+      const notice = after === 0 ? stock?.pendingNotice : null;
+      return {
+        name: faction.name,
+        label: after === 0 ? "退市" : before === null ? "挂牌 " + format(after) : percent(change),
+        tone: tone(change),
+        note: notice ? "持仓 " + format(notice.shares) + " 股清零，损失 " + coins(notice.loss) : ""
+      };
+    });
+    $("impact").innerHTML = impacts.map(({ name, label, tone: cls, note }) =>
+      `<span class="impact-item">${name} <strong class="${cls}">${label}</strong>` +
+      (note ? `<small>${note}</small>` : "") + "</span>").join("");
+    if (revealed > previousRevealed) {
+      showToast({
+        label: "第 " + revealed + " 条军情 · " + latest.year + " 年",
+        title: latest.title,
+        items: impacts.slice(0, 4).map(({ name, label, note }) =>
+          name + " " + label + (note ? "，" + note : ""))
+      });
+    }
   }
 
   $("order").hidden = finished();
   $("preopen").hidden = isOpen;
   $("trade").hidden = !isOpen;
   $("summary").hidden = !finished();
+  if (finished() && previousRevealed < story.length) $("restart").focus();
   if (finished()) {
     const total = assetValue(market);
     const roi = (total - startingCash) / startingCash;
     $("summary-stats").innerHTML = [
       ["期末资产", format(total), ""], ["总收益率", percent(roi), tone(roi)],
+      ["已实现盈亏", (market.realized > 0 ? "+" : "") + format(market.realized), tone(market.realized)],
       ["最高资产", format(market.peak), ""], ["成交次数", format(market.trades), ""],
       ["已付手续费", format(market.fees), ""]
     ].map(([label, value, style]) => `<div><dt>${label}</dt><dd class="${style}">${value}</dd></div>`).join("");
   }
+  renderArchive();
 }
 
 function renderOrder() {
@@ -235,6 +343,14 @@ function renderOrder() {
   $("quote").textContent = stock.faction.name + " · " + quote;
 
   if (openedAt === null || finished()) return;
+
+  if (stock.pendingNotice) {
+    const notice = stock.pendingNotice;
+    stock.pendingNotice = null;
+    $("trade-status").textContent = stock.faction.name + " 已退市，持仓 " +
+      format(notice.shares) + " 股清零，损失 " + coins(notice.loss) + "。";
+  }
+
   const limit = tradeLimit(market, stock, side);
   const quantity = $("quantity").valueAsNumber;
   const buying = side === "buy";
@@ -259,11 +375,13 @@ function renderOrder() {
 
 function renderMarket() {
   renderTickers();
+  renderLiveStatus();
   renderQuoteChart();
   renderChart();
   renderLedger();
   renderOrder();
   renderClock();
+  renderTape();
 }
 
 function syncClock() {
@@ -285,8 +403,12 @@ function reset() {
   candleIndex = null;
   side = "buy";
   candleGrid.replaceChildren();
+  factionSelect.value = "0";
+  revealedCount = 0;
   $("quantity").value = "1";
   $("trade-status").textContent = "";
+  $("toasts").replaceChildren();
+  $("archive").open = false;
   renderStory();
   renderMarket();
 }
@@ -305,6 +427,10 @@ for (const direction of ["buy", "sell"]) {
     renderOrder();
   });
 }
+
+factionSelect.addEventListener("change", () => selectFaction(Number(factionSelect.value)));
+$("faction-prev").addEventListener("click", () => selectFaction((selected + factions.length - 1) % factions.length));
+$("faction-next").addEventListener("click", () => selectFaction((selected + 1) % factions.length));
 
 $("max").addEventListener("click", () => {
   const limit = tradeLimit(market, market.stocks[selected], side);
@@ -332,11 +458,14 @@ $("trade").addEventListener("submit", (event) => {
     return;
   }
   const buying = side === "buy";
+  const result = buying ? "" : "，本次" + (order.pnl > 0 ? "盈利 " : order.pnl < 0 ? "亏损 " : "盈亏 ") +
+    format(Math.abs(order.pnl)) + " 铜钱";
   status.textContent = (buying ? "买入 " : "卖出 ") + stock.faction.name + " " + format(quantity) +
     " 股，成交价 " + format(order.price) + "，手续费 " + format(order.fee) + "，" +
-    (buying ? "实付 " : "实收 ") + coins(order.net) + "。";
+    (buying ? "实付 " : "实收 ") + coins(order.net) + result + "。";
   renderLedger();
   renderOrder();
+  renderLiveStatus();
 });
 
 $("open-market").addEventListener("click", () => {
@@ -351,6 +480,14 @@ $("open-market").addEventListener("click", () => {
 $("restart").addEventListener("click", () => {
   reset();
   $("open-market").focus();
+});
+$("event-tape").addEventListener("click", () => {
+  $("archive").open = true;
+  const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  document.querySelector(".story-card").scrollIntoView({ behavior, block: "start" });
+});
+$("archive").addEventListener("toggle", () => {
+  $("event-tape").setAttribute("aria-expanded", String($("archive").open));
 });
 document.addEventListener("visibilitychange", syncClock);
 $("help-open").addEventListener("click", () => $("help-dialog").showModal());

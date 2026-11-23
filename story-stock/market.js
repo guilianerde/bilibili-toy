@@ -24,7 +24,7 @@ function recordPrice(stock, price, event = null) {
 
 function createMarket() {
   const stocks = factions.map((faction) => {
-    const stock = { faction, anchor: null, candles: [], quoteHistory: [], shares: 0 };
+    const stock = { faction, anchor: null, candles: [], quoteHistory: [], shares: 0, cost: 0 };
     for (const event of prologue) {
       const quote = event.quotes[faction.id];
       if (quote === undefined) continue;
@@ -35,7 +35,7 @@ function createMarket() {
     return stock;
   });
 
-  return { stocks, tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, news: [] };
+  return { stocks, tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, realized: 0, news: [] };
 }
 
 function assetValue(market) {
@@ -62,7 +62,14 @@ function advanceMarket(market, targetTick, random = Math.random) {
       if (shock !== undefined) {
         market.news.push({ faction: stock.faction, before: price, after: shock });
         stock.anchor = shock;
-        if (shock === 0) stock.shares = 0;
+        if (shock === 0) {
+          if (stock.shares > 0) {
+            stock.pendingNotice = { shares: stock.shares, loss: stock.cost };
+            market.realized -= stock.cost;
+          }
+          stock.shares = 0;
+          stock.cost = 0;
+        }
       }
       recordPrice(stock, nextPrice, event);
       stock.quoteHistory.push({ tick: market.tick, price: nextPrice });
@@ -91,10 +98,15 @@ function executeTrade(market, stock, side, quantity) {
   const fee = tradeFee(gross);
   const buying = side === "buy";
   const net = buying ? gross + fee : gross - fee;
+  // Cost basis includes fees. Sells release the average cost of the shares sold.
+  const basis = buying ? 0 : Math.round(stock.cost * quantity / stock.shares);
 
+  stock.cost += buying ? net : -basis;
   stock.shares += buying ? quantity : -quantity;
+  if (!stock.shares) stock.cost = 0;
+  if (!buying) market.realized += net - basis;
   market.cash += buying ? -net : net;
   market.trades += 1;
   market.fees += fee;
-  return { price, fee, net };
+  return { price, fee, net, pnl: buying ? 0 : net - basis };
 }
