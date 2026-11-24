@@ -120,8 +120,9 @@ function advanceMarket(market, targetTick, random = Math.random) {
       stock.quoteHistory.push({ tick: market.tick, price: nextPrice });
       if (stock.quoteHistory.length > quoteWindow + 1) stock.quoteHistory.shift();
     }
+    // 主线与每一条驿报都记一个点，折线才能从一个小事件连到下一个小事件。
     if (event) recordTimeline(market, event.year);
-    else if (brief && briefQuotes) recordTimeline(market, brief.event.briefs[brief.briefIndex].year);
+    else if (brief) recordTimeline(market, brief.event.briefs[brief.briefIndex].year);
     market.peak = Math.max(market.peak, assetValue(market));
   }
 }
