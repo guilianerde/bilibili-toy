@@ -5,6 +5,69 @@ const startingCash = 10_000;
 const feeDivisor = 200;
 const quoteWindow = 60;
 
+// 演义模式的随机数（mulberry32）：同一 seed 每次开局都走出同一条史线，
+// 方便复盘，也为以后做「每日同一局」留好接口。
+function createRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(state ^ (state >>> 15), state | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// 史实：按剧本原线走，行情只有逐秒噪声。演义：逐条主线抽一条史线，报价再按局势浮动。
+const runModes = {
+  history: { label: "史实", variants: false, jitter: 0 },
+  romance: { label: "演义", variants: true, jitter: 0.12 }
+};
+
+// 报价加浮动：退市的 0 必须留在 0，其余至少保留 1 铜钱。
+function jitterQuotes(quotes, band, random) {
+  if (!band) return { ...quotes };
+  const scaled = {};
+  for (const [id, price] of Object.entries(quotes)) {
+    scaled[id] = price === 0 ? 0 : Math.max(1, Math.round(price * (1 + (random() * 2 - 1) * band)));
+  }
+  return scaled;
+}
+
+// 定下本局要走的史线：先把每条主线的报价、结局与驿报解析成只属于这一局的副本，
+// 之后行情、档案、驿报都读这份副本，剧情原文不再改动。
+function resolveRun(mode, seed) {
+  const config = runModes[mode] ?? runModes.history;
+  const random = createRandom(seed);
+  const build = (event) => {
+    const variant = config.variants && event.variants?.length
+      ? event.variants[Math.floor(random() * event.variants.length)]
+      : null;
+    const base = variant?.briefs ?? event.briefs ?? [];
+    const briefs = base
+      .map((brief, index) => variant?.patches?.[index] === undefined ? brief : variant.patches[index])
+      .filter(Boolean)
+      .concat(variant?.clues ?? []);
+    return {
+      year: event.year, where: event.where, preview: event.preview, lead: event.lead,
+      title: variant?.title ?? event.title,
+      outcome: variant?.outcome ?? event.outcome,
+      variant: variant?.label ?? null,
+      quotes: jitterQuotes(variant?.quotes ?? event.quotes, config.jitter, random),
+      briefs: briefs.map((brief) => ({
+        ...brief,
+        quotes: brief.quotes ? jitterQuotes(brief.quotes, config.jitter, random) : undefined
+      }))
+    };
+  };
+  return {
+    mode, seed,
+    label: config.label,
+    prologue: prologue.map(build),
+    story: story.map(build),
+    random: createRandom(seed ^ 0x9e3779b9) // 价格波动另走一条随机流，改剧情不会牵动它。
+  };
+}
+
 function currentPrice(stock) {
   return stock.candles.at(-1)?.close ?? null;
 }
@@ -27,16 +90,16 @@ function briefTicks(count) {
   return Array.from({ length: count }, (_, index) => Math.round((index + 1) * (ticksPerEvent - 1) / count));
 }
 
-function briefAt(tick) {
+function briefAt(market, tick) {
   if (tick <= 0 || tick >= totalTicks) return null;
   const elapsed = (tick - 1) % ticksPerEvent + 1;
   if (elapsed >= ticksPerEvent) return null;
   const eventIndex = Math.floor((tick - 1) / ticksPerEvent);
-  const event = story[eventIndex];
+  const event = market.story[eventIndex];
   const briefs = event?.briefs ?? [];
   const briefIndex = briefTicks(briefs.length).indexOf(elapsed);
   if (briefIndex < 0) return null;
-  return { eventIndex, briefIndex, event, key: eventIndex + ":" + briefIndex };
+  return { eventIndex, briefIndex, event, brief: briefs[briefIndex], key: eventIndex + ":" + briefIndex };
 }
 
 // 每次主线或带报价的驿报揭晓时，记下全市场当时的报价，供走势图按故事年月回放。
@@ -49,10 +112,11 @@ function recordTimeline(market, year, prices) {
   });
 }
 
-function createMarket() {
+function createMarket(mode = "history", seed = Date.now()) {
+  const run = resolveRun(mode, seed);
   const stocks = factions.map((faction) => {
     const stock = { faction, anchor: null, candles: [], quoteHistory: [], shares: 0, cost: 0 };
-    for (const event of prologue) {
+    for (const event of run.prologue) {
       const quote = event.quotes[faction.id];
       if (quote === undefined) continue;
       stock.anchor = quote;
@@ -63,12 +127,14 @@ function createMarket() {
   });
 
   const market = {
-    stocks, tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, realized: 0,
-    news: [], briefImpacts: new Map(), timeline: [], monthCounts: new Map()
+    stocks, run, prologue: run.prologue, story: run.story, random: run.random,
+    tick: 0, cash: startingCash, peak: startingCash, fees: 0, trades: 0, realized: 0,
+    news: [], briefImpacts: new Map(), timeline: [], monthCounts: new Map(),
+    variants: run.story.filter((event) => event.variant).map((event) => ({ year: event.year, title: event.title, label: event.variant }))
   };
   // 开市前的 184/189/190 三次报价也要进历史走势。
   const prices = new Map(factions.map((faction) => [faction.id, null]));
-  for (const event of prologue) {
+  for (const event of run.prologue) {
     for (const [id, price] of Object.entries(event.quotes)) prices.set(id, price);
     recordTimeline(market, event.year, new Map(prices));
   }
@@ -85,13 +151,13 @@ function driftPrice(price, anchor, random) {
   return Math.max(1, price + change);
 }
 
-function advanceMarket(market, targetTick, random = Math.random) {
+function advanceMarket(market, targetTick, random = market.random ?? Math.random) {
   const end = Math.min(targetTick, totalTicks);
   while (market.tick < end) {
     market.tick += 1;
-    const event = market.tick % ticksPerEvent === 0 ? story[market.tick / ticksPerEvent - 1] : null;
-    const brief = event ? null : briefAt(market.tick);
-    const briefQuotes = brief ? brief.event.briefs[brief.briefIndex].quotes : undefined;
+    const event = market.tick % ticksPerEvent === 0 ? market.story[market.tick / ticksPerEvent - 1] : null;
+    const brief = event ? null : briefAt(market, market.tick);
+    const briefQuotes = brief?.brief.quotes;
     if (event) market.news = [];
     for (const stock of market.stocks) {
       const price = currentPrice(stock);
@@ -122,7 +188,7 @@ function advanceMarket(market, targetTick, random = Math.random) {
     }
     // 主线与每一条驿报都记一个点，折线才能从一个小事件连到下一个小事件。
     if (event) recordTimeline(market, event.year);
-    else if (brief) recordTimeline(market, brief.event.briefs[brief.briefIndex].year);
+    else if (brief) recordTimeline(market, brief.brief.year);
     market.peak = Math.max(market.peak, assetValue(market));
   }
 }

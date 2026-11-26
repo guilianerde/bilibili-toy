@@ -23,6 +23,7 @@ let chartScope = "all";
 let chartFactions = new Set([0]);
 let chartConfig = null;
 let chartHighlight = null;
+let runMode = "romance";
 
 const tickers = factions.map((faction, index) => {
   const button = document.createElement("button");
@@ -113,6 +114,23 @@ for (const button of scopeButtons) {
 $("pick-all").addEventListener("click", () => setPicks(factions.map((_, index) => index)));
 $("pick-none").addEventListener("click", () => setPicks([]));
 
+// 开盘前选择本局史线：史实按原线走，演义每局从几条史线里抽一条。
+const modeButtons = [...document.querySelectorAll(".mode-button")];
+function renderMode() {
+  for (const button of modeButtons) {
+    button.setAttribute("aria-pressed", String(button.dataset.mode === runMode));
+  }
+  $("mode-note").textContent = runMode === "romance"
+    ? "演义：每局从几条史线里抽一条，同一条军情可能走出不同的结局与行情。"
+    : "史实：按《三国演义》原线推进，行情只有逐秒噪声。";
+}
+for (const button of modeButtons) {
+  button.addEventListener("click", () => {
+    if (openedAt !== null) return;
+    reset(button.dataset.mode);
+  });
+}
+
 function selectFaction(index) {
   if (index === selected) return;
   selected = index;
@@ -190,9 +208,9 @@ function renderLiveStatus() {
 
 function renderTape() {
   const revealed = Math.floor(market.tick / ticksPerEvent);
-  const latest = revealed > 0 ? story[revealed - 1] : null;
-  const upcoming = story[revealed] ?? null;
-  const current = latest ?? upcoming ?? story[0];
+  const latest = revealed > 0 ? market.story[revealed - 1] : null;
+  const upcoming = market.story[revealed] ?? null;
+  const current = latest ?? upcoming ?? market.story[0];
   const phase = finished() ? "已收盘" : openedAt === null ? "待开盘" : "盘中";
   $("tape-phase").textContent = phase;
   $("tape-phase").dataset.phase = finished() ? "closed" : openedAt === null ? "preopen" : "live";
@@ -208,16 +226,16 @@ function renderTape() {
 }
 
 function totalDispatches() {
-  return prologue.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0) +
-    story.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0);
+  return market.prologue.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0) +
+    market.story.reduce((sum, event) => sum + (event.briefs?.length ?? 0), 0);
 }
 
 function revealedDispatches() {
-  const feed = prologue.flatMap((event, eventIndex) =>
+  const feed = market.prologue.flatMap((event, eventIndex) =>
     (event.briefs ?? []).map((brief, briefIndex) => ({ ...brief, key: "p" + eventIndex + ":" + briefIndex })));
   const segment = Math.floor(market.tick / ticksPerEvent);
   const elapsed = market.tick % ticksPerEvent;
-  story.forEach((event, index) => {
+  market.story.forEach((event, index) => {
     const briefs = event.briefs ?? [];
     const shown = index < segment ? briefs.length :
       index === segment ? briefTicks(briefs.length).filter((tick) => tick <= elapsed).length : 0;
@@ -316,23 +334,25 @@ function renderArchive() {
   const revealed = Math.floor(market.tick / ticksPerEvent);
   const stock = market.stocks[selected];
   // Unexposed main events stay hidden: their titles and years never reach the archive.
-  const rows = story.flatMap((event, index) => {
+  const rows = market.story.flatMap((event, index) => {
     const state = finished() || (openedAt !== null && index < revealed) ? "revealed" : "pending";
     if (state === "pending") return [];
     const candle = stock.candles.find((item) => item.event === event);
     const price = candle ? (candle.close === 0 ? "退市" : format(candle.close)) : "—";
     const status = "已揭晓";
-    return [`<li class="archive-row" data-state="${state}">` +
+    // 演义模式里走的是哪一条史线，揭晓后写在档案里，方便回看这一局的分岔。
+    const badge = event.variant ? `<span class="archive-variant">${event.variant}</span>` : "";
+    return [`<li class="archive-row" data-state="${state}"${event.variant ? ' data-variant="1"' : ""}>` +
       `<time>${event.year}</time>` +
-      `<span class="archive-event">${event.title}</span>` +
+      `<span class="archive-event">${event.title}${badge}</span>` +
       `<span class="archive-meta"><span class="archive-status">${status}</span>` +
       `<span class="archive-price">${price}</span></span>` +
       `</li>`];
   }).join("");
   $("archive-list").innerHTML = rows || '<li class="archive-empty">尚无已揭晓的军情。</li>';
-  $("archive-count").textContent = finished() ? story.length + " / " + story.length + " · 已收盘" :
-    openedAt === null ? "0 / " + story.length + " · 待开盘" :
-    revealed + " / " + story.length + " 已揭晓";
+  $("archive-count").textContent = finished() ? market.story.length + " / " + market.story.length + " · 已收盘" :
+    openedAt === null ? "0 / " + market.story.length + " · 待开盘" :
+    revealed + " / " + market.story.length + " 已揭晓";
   $("archive-note").textContent = "收盘价按 " + stock.faction.name +
     "；未揭晓的军情不列，未挂牌记 —，退市当节记「退市」";
 }
@@ -358,16 +378,16 @@ function renderLedger() {
 }
 
 function tickStoryDate(tick) {
-  const index = Math.min(story.length - 1, Math.max(0, Math.floor(tick / ticksPerEvent)));
-  const year = story[index].year;
+  const index = Math.min(market.story.length - 1, Math.max(0, Math.floor(tick / ticksPerEvent)));
+  const year = market.story[index].year;
   const elapsed = tick % ticksPerEvent;
   return { year, month: Math.min(12, Math.max(1, Math.ceil(elapsed / 2))) };
 }
 
 // 当前剧情年份：待揭晓时用下一节的年份，收盘后用最后一节。
 function currentStoryYear() {
-  if (finished()) return story.at(-1).year;
-  return story[Math.min(Math.floor(market.tick / ticksPerEvent), story.length - 1)].year;
+  if (finished()) return market.story.at(-1).year;
+  return market.story[Math.min(Math.floor(market.tick / ticksPerEvent), market.story.length - 1)].year;
 }
 
 function dateLabel(year, month) {
@@ -597,7 +617,7 @@ function renderChart() {
   const from = dated[0]?.event.year ?? currentDate.year;
   const to = (last.event ?? dated.at(-1)?.event)?.year ?? currentDate.year;
   const years = from === to ? String(from) : from + "–" + to;
-  const upcoming = story.find((event, index) =>
+  const upcoming = market.story.find((event, index) =>
     index >= Math.floor(market.tick / ticksPerEvent) && event.quotes[faction.id] !== undefined);
   $("chart-range").textContent = years + " 年 · " + (last.close === 0 ? "完整走势 · 已退市" :
     finished() ? "完整走势 · 已收盘" : last.event ? "每根对应一段行情" : "盘中 · 每秒更新");
@@ -641,12 +661,12 @@ function renderClock() {
   $("round-progress").value = market.tick;
   const revealed = Math.floor(market.tick / ticksPerEvent);
   if (finished()) {
-    $("round-label").textContent = revealed + " / " + story.length + " 条军情";
+    $("round-label").textContent = revealed + " / " + market.story.length + " 条军情";
   } else if (openedAt === null) {
-    $("round-label").textContent = story.length + " 条军情";
+    $("round-label").textContent = market.story.length + " 条军情";
   } else {
     const remaining = ticksPerEvent - market.tick % ticksPerEvent;
-    $("round-label").textContent = "下条军情 " + remaining + " 秒 · " + revealed + "/" + story.length;
+    $("round-label").textContent = "下条军情 " + remaining + " 秒 · " + revealed + "/" + market.story.length;
   }
 }
 
@@ -672,8 +692,8 @@ function renderStory() {
   const previousRevealed = revealedCount;
   const revealed = Math.floor(market.tick / ticksPerEvent);
   revealedCount = revealed;
-  const latest = story[revealed - 1] ?? prologue.at(-1);
-  const event = story[revealed] ?? latest;
+  const latest = market.story[revealed - 1] ?? market.prologue.at(-1);
+  const event = market.story[revealed] ?? latest;
   const isOpen = openedAt !== null && !finished();
   $("phase").textContent = finished() ? "已收盘" : isOpen ? "连续交易" : "待开盘";
   $("phase").dataset.phase = isOpen ? "live" : "closed";
@@ -685,6 +705,8 @@ function renderStory() {
   if (revealed && !finished()) {
     $("news-date").textContent = "最新军情 · " + latest.year + " 年";
     $("news-title").textContent = latest.title;
+    $("news-variant").hidden = !latest.variant;
+    $("news-variant").textContent = latest.variant ? "史线 · " + latest.variant : "";
     $("news-copy").textContent = latest.outcome;
     const impacts = market.news.map(({ faction, before, after }) => {
       const change = before ? (after - before) / before : 0;
@@ -701,7 +723,7 @@ function renderStory() {
       `<span class="impact-item">${name} <strong class="${cls}">${label}</strong>` +
       (note ? `<small>${note}</small>` : "") + "</span>").join("");
     // Briefs in the run-up can move a faction too; show the most recent moves beside the main outcome.
-    const previous = story[revealed - 1];
+    const previous = market.story[revealed - 1];
     const runUp = (previous?.briefs ?? []).flatMap((_, briefIndex) =>
       market.briefImpacts.get((revealed - 1) + ":" + briefIndex) ?? [])
       .filter(({ faction }) => !impacts.some((impact) => impact.name === faction.name));
@@ -730,7 +752,7 @@ function renderStory() {
   $("preopen").hidden = isOpen;
   $("trade").hidden = !isOpen;
   $("summary").hidden = !finished();
-  if (finished() && previousRevealed < story.length) $("restart").focus();
+  if (finished() && previousRevealed < market.story.length) $("restart").focus();
   if (finished()) {
     const total = assetValue(market);
     const roi = (total - startingCash) / startingCash;
@@ -740,6 +762,11 @@ function renderStory() {
       ["最高资产", format(market.peak), ""], ["成交次数", format(market.trades), ""],
       ["已付手续费", format(market.fees), ""]
     ].map(([label, value, style]) => `<div><dt>${label}</dt><dd class="${style}">${value}</dd></div>`).join("");
+    // 演义模式把这一局走出的史线列在结算里，方便和下一局对照。
+    const twists = market.variants.filter(({ label }) => label !== "原线");
+    $("summary-variants").hidden = twists.length === 0;
+    $("summary-variants").innerHTML = twists.map(({ year, label }) =>
+      `<span><time>${year}</time>${label}</span>`).join("");
   }
   renderArchive();
 }
@@ -805,10 +832,12 @@ function syncClock() {
   if (finished()) clearInterval(timer);
 }
 
-function reset() {
+function reset(mode = runMode) {
   clearInterval(timer);
   openedAt = null;
-  market = createMarket();
+  runMode = mode;
+  renderMode();
+  market = createMarket(runMode);
   selected = 0;
   candleIndex = null;
   side = "buy";

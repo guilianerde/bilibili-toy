@@ -83,8 +83,27 @@ const story = [
 | `lead` | 预告正文 |
 | `title` | 揭晓后的正式标题 |
 | `outcome` | 揭晓后的结果正文 |
-| `quotes` | 该主线对势力的绝对报价，见下文 |
+| `quotes` | 原线对势力的绝对报价，见下文 |
 | `briefs` | 该段 24 秒内的过程小事件 |
+| `variants` | 可选：本条的几条史线，演义模式每局抽一条，见下文 |
+
+### 主线 `variants`（史线分支）
+
+```js
+variants: [
+  { label: "原线" },                       // 第一项必须是原线，史实模式固定走它
+  {
+    label: "东风未起",                      // 揭晓时显示在军情卡和档案上
+    title: "赤壁对峙",                      // 可选：覆盖事件标题
+    outcome: "冬至已过，江上仍刮北风……",     // 可选：覆盖结果正文
+    quotes: { wei: 196, shu: 52, wu: 84 }, // 本史线的完整报价，覆盖原线的 quotes
+    patches: { 5: { text: "……" } },        // 可选：按下标改驿报，只写要改的字段
+    clues: [ { year: 208, where: "赤壁", text: "……", quotes: { wu: 118 } } ] // 可选：追加驿报
+  }
+]
+```
+
+`market.js` 的 `resolveRun(mode, seed)` 在开局时把每条主线解析成只属于这一局的副本（`market.story` / `market.prologue`），行情、档案、驿报都读这份副本，`story.js` 原文不变。演义模式还会给所有报价加 ±`jitter` 的浮动；史实模式原样照搬。随机数是 mulberry32，同一个 seed 必得同一条史线。
 
 ### brief（军情驿报）字段
 
@@ -131,9 +150,10 @@ const totalTicks = story.length * ticksPerEvent; // 20 × 24 = 480 秒
 - 每段主线固定 24 秒；第 24 秒揭晓主线，随后进入下一段。
 - `briefTicks(count)` 把一段里的 brief 均匀排到第 1–23 秒。例如 4 条排在第 6、12、17、23 秒，7 条排在第 3、7、10、13、16、20、23 秒。
 - 因此**增删 briefs 不需要改计时代码**，数组长度变了，排期会自动重排。
-- `briefAt(tick)` 把当前秒解析成 `{ eventIndex, briefIndex, key }`，再取该条 brief 的 `quotes` 改价。
+- `briefAt(market, tick)` 把当前秒解析成 `{ eventIndex, briefIndex, event, brief, key }`，再取该条 brief 的 `quotes` 改价。
 - 驿报造成的涨跌记录在 `market.briefImpacts`，键是 `"eventIndex:briefIndex"`，驿报卡片据此显示涨跌。
 - `prologue` 的 briefs 在开市前全部展示，不参与行情（`briefAt` 只查 `story`）。
+- `createMarket(mode, seed)` 先调 `resolveRun()` 定下本局史线，`advanceMarket()` 之后一律读 `market.story`，价格噪声走 `market.random`，所以同一 seed 一定能复现整局。
 
 [`game.js`](game.js) 里：
 
@@ -151,6 +171,7 @@ const totalTicks = story.length * ticksPerEvent; // 20 × 24 = 480 秒
 | 主线事件 | 20 段 / 109 条 brief |
 | brief 合计 | **124 条** |
 | 每段主线 brief | 4–8 条 |
+| 史线分支 | 8 条主线各有 1 条支线（原线 + 1），共 8 个分支点 |
 | 一局时长 | 20 × 24 秒 = 8 分钟 |
 
 ## 如何扩容

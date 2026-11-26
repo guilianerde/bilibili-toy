@@ -101,11 +101,13 @@
           <div id="news" class="story-news" aria-live="polite" hidden>
             <p id="news-date" class="story-location"></p>
             <h3 id="news-title"></h3>
+            <span class="variant-tag" id="news-variant" hidden></span>
             <p id="news-copy"></p>
             <div id="impact" class="impact"></div>
           </div>
           <div id="summary" class="summary" hidden>
             <dl id="summary-stats"></dl>
+            <p id="summary-variants" class="summary-variants" hidden></p>
             <button type="button" class="button advance" id="restart">再开一局</button>
           </div>
           <details class="archive" id="archive">
@@ -169,6 +171,11 @@
           </div>
           <div id="preopen">
             <p>10,000 铜钱起步。开盘后剧情和报价会自动推进，约 8 分钟后收盘。</p>
+            <div class="modes" role="group" aria-label="本局史线">
+              <button type="button" class="mode-button" id="mode-history" data-mode="history" aria-pressed="false">史实</button>
+              <button type="button" class="mode-button" id="mode-romance" data-mode="romance" aria-pressed="true">演义</button>
+            </div>
+            <p class="mode-note" id="mode-note"></p>
             <button type="button" class="button advance" id="open-market">开盘</button>
           </div>
           <form id="trade" hidden>
@@ -216,6 +223,7 @@
   <dialog id="help-dialog" aria-labelledby="help-title">
     <h2 id="help-title">怎么玩</h2>
     <ol>
+      <li>开盘前可选「史实」或「演义」：史实按《三国演义》原线推进；演义每局从若干条史线里抽一条，同一条军情可能走出不同的结局与行情，揭晓时会在军情旁标出本局走的史线。</li>
       <li>开盘后，报价每秒更新，每 24 秒公布一条军情。你可以随时按当前报价买卖整数股。</li>
       <li>买卖均收取成交额的 0.5%，向上取整，最低 1 铜钱。账本按含手续费的成本显示浮动盈亏；卖出时按均价结转已实现盈亏。</li>
       <li>「势力走势」可以在实时、近 5 年、近 10 年和全部之间切换：实时看最近 60 秒的逐秒报价，其余按剧情年月回放，横轴从 184 年开始标出年月（月份按军情条目先后排定），每条主线与驿报各记一个点。勾选多家势力会把它们的走势叠在同一张图上，此时以各家区间起点的价格等于 100 对比涨跌；只勾一家时按铜钱标价。K 线记录各剧情段的开、高、低、收。退市后持仓归零，并提示清零损失；历史走势仍可查看。</li>

@@ -82,7 +82,20 @@ const story = [
       { year: 191, where: "岘山", tag: "战报", chapter: "第七回", text: "孙坚跨江击刘表，追敌至岘山，遭吕公伏兵，中石而亡；孙策扶柩归江东，与刘表结下死仇。", quotes: { wu: 44 } },
       { year: 192, where: "长安", tag: "权谋", chapter: "第八回", text: "王允以貂蝉设连环计，先许吕布，再献董卓；凤仪亭一场风波，吕布与董卓自此离心。" }
     ],
-    quotes: { dong: 0, bu: 63, shao: 125, zan: 51, jiao: 0, "jin-he": 0 }
+    quotes: { dong: 0, bu: 63, shao: 125, zan: 51, jiao: 0, "jin-he": 0 },
+    // 演义模式的史线：quotes 为该分支下的全价（含退市 0），patches 按下标改写驿报，
+    // clues 追加在驿报末尾。只写与原线不同的部分，未写的字段沿用主线设定。
+    variants: [
+      { label: "原线" },
+      {
+        label: "长安再乱",
+        quotes: { dong: 0, bu: 44, shao: 132, zan: 58, jiao: 0, "jin-he": 0 },
+        outcome: "王允不肯赦免凉州旧部，李傕、郭汜聚兵反攻长安；吕布败走，只带百余骑东出武关。董卓退市，吕布勉强挂牌，袁绍在河北坐大。",
+        clues: [
+          { year: 192, where: "长安", tag: "战报", chapter: "第九回", text: "凉州旧部不肯听命，李傕、郭汜已聚兵数万，扬言要为董卓报仇，长安城内人心浮动。", quotes: { bu: 52 } }
+        ]
+      }
+    ]
   },
   {
     year: 194, where: "徐州 · 兖州", preview: "徐州求援",
@@ -166,7 +179,18 @@ const story = [
       { year: 200, where: "江东", tag: "人事", chapter: "第二十九回", text: "孙策怒斩于吉，不久遇刺身亡；孙权继位，礼聘张昭、周瑜，江东易主。", quotes: { wu: 46 } },
       { year: 200, where: "乌巢", tag: "战报", chapter: "第三十回", text: "许攸夜奔曹营，献计火烧乌巢；袁军粮草尽焚，张郃、高览阵前倒戈。", quotes: { wei: 188, shao: 82 } }
     ],
-    quotes: { wei: 192, shao: 71, shu: 16, wu: 58, xiu: 0 }
+    quotes: { wei: 192, shao: 71, shu: 16, wu: 58, xiu: 0 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "乌巢未焚",
+        quotes: { wei: 158, shao: 108, shu: 18, wu: 58, xiu: 0 },
+        outcome: "许攸出逃未成，乌巢粮草得以保全；曹操粮尽退兵，官渡无功而返。袁绍仍据河北，曹操元气大伤。",
+        patches: {
+          5: { year: 200, where: "乌巢", tag: "战报", chapter: "第三十回", text: "许攸家人犯法下狱，许攸怒而出走，行至半途被袁军巡骑追回；乌巢粮草无恙，曹军粮尽退兵。", quotes: { wei: 176, shao: 96 } }
+        }
+      }
+    ]
   },
   {
     year: 204, where: "邺城", preview: "河北内争",
@@ -221,7 +245,20 @@ const story = [
       { year: 208, where: "赤壁", tag: "权谋", chapter: "第四十七回", text: "庞统过江，劝曹军将战船首尾用铁环相连，以解北军晕船之苦；曹操大喜，自以为得计。", quotes: { wei: 180, wu: 122 } },
       { year: 208, where: "赤壁", tag: "战报", chapter: "第四十九回", text: "诸葛亮于七星坛祭得东南风，黄盖率火船直冲曹营，江面火起。", quotes: { wei: 130, wu: 126 } }
     ],
-    quotes: { wei: 112, shu: 82, wu: 124 }
+    quotes: { wei: 112, shu: 82, wu: 124 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "东风未起",
+        title: "赤壁对峙",
+        quotes: { wei: 196, shu: 52, wu: 84 },
+        outcome: "冬至已过，江上仍刮北风，火攻未成；黄盖火船被曹军水寨乱箭逼退。曹操保住南岸，孙刘联军退回江南，隔江对峙。",
+        patches: {
+          4: { year: 208, where: "赤壁", tag: "权谋", chapter: "第四十七回", text: "庞统过江，劝曹军将战船首尾用铁环相连；江上连日北风，周瑜营中反复推演火攻，却始终等不来东南风。", quotes: { wei: 182, wu: 118 } },
+          5: { year: 208, where: "赤壁", tag: "战报", chapter: "第四十九回", text: "冬至将尽，东南风迟迟不至；黄盖火船驶到半途被曹军水寨乱箭逼退，火攻未成。", quotes: { wei: 172, wu: 96 } }
+        }
+      }
+    ]
   },
   {
     year: 214, where: "益州", preview: "益州城门将闭",
@@ -237,7 +274,18 @@ const story = [
       { year: 213, where: "巴郡", tag: "人事", chapter: "第六十三回", text: "张飞义释严颜，严颜感其恩义，归顺刘备，巴郡一路望风而降。", quotes: { shu: 132 } },
       { year: 214, where: "葭萌关", tag: "战报", chapter: "第六十五回", text: "马超与张飞在葭萌关大战，后经诸葛亮遣人说降归刘备；成都城外蜀军云集。", quotes: { shu: 150 } }
     ],
-    quotes: { wei: 145, shu: 156, wu: 113, ma: 0 }
+    quotes: { wei: 145, shu: 156, wu: 113, ma: 0 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "成都久攻",
+        quotes: { wei: 152, shu: 126, wu: 113, ma: 0 },
+        outcome: "刘璋据城死守，刘备围成都数月，粮尽议和；益州虽入刘备之手，却是空城一座，马腾余部也在关中败亡。",
+        clues: [
+          { year: 213, where: "成都", tag: "朝局", chapter: "第六十四回", text: "成都城中粮草尚足，刘璋闭门不出；刘备军中已在议论退兵，益州的价钱被压了下来。", quotes: { shu: 138 } }
+        ]
+      }
+    ]
   },
   {
     year: 219, where: "汉中 · 荆州", preview: "两条战线",
@@ -286,7 +334,19 @@ const story = [
       { year: 228, where: "街亭", tag: "战报", chapter: "第九十五回", text: "马谡违令扎营山上，失守街亭；诸葛亮在西城焚香抚琴，司马懿疑有伏兵而退。", quotes: { shu: 70, wei: 160 } },
       { year: 229, where: "武昌", tag: "异闻", chapter: "第九十八回", text: "武昌东山凤凰来仪，大江之中黄龙屡现；张昭率群臣劝孙权即皇帝位。", quotes: { wu: 212 } }
     ],
-    quotes: { wu: 204, shu: 79 }
+    quotes: { wu: 204, shu: 79 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "称王未帝",
+        title: "群臣劝进未果",
+        quotes: { wu: 154, shu: 79 },
+        outcome: "武昌凤凰之说被人非议，孙权以天命未可妄测推辞称帝，只进号吴王。三方的名号仍差着一层，江东估值回落。",
+        clues: [
+          { year: 229, where: "武昌", tag: "朝局", chapter: "第九十八回", text: "张昭率群臣劝进，孙权却以「天命未可妄测」推辞，只肯受吴王之位，江东群臣议论纷纷。", quotes: { wu: 176 } }
+        ]
+      }
+    ]
   },
   {
     year: 234, where: "五丈原", preview: "北伐陷入僵持",
@@ -299,7 +359,19 @@ const story = [
       { year: 234, where: "上方谷", tag: "战报", chapter: "第一百三回", text: "诸葛亮诱司马懿入上方谷，火起之际天降大雨，司马懿父子趁雨突围。", quotes: { wei: 168 } },
       { year: 234, where: "五丈原", tag: "异闻", chapter: "第一百三回", text: "诸葛亮积劳成疾，在五丈原设灯禳星；魏延闯入帐中，主灯被风吹灭。", quotes: { shu: 42, wei: 180 } }
     ],
-    quotes: { wei: 177, shu: 39, wu: 148 }
+    quotes: { wei: 177, shu: 39, wu: 148 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "禳星得延",
+        title: "秋风未起",
+        quotes: { wei: 166, shu: 60, wu: 148 },
+        outcome: "诸葛亮在五丈原服药调养，病势稍缓，蜀军全师退回汉中。北伐未成，蜀中人心却未散。",
+        clues: [
+          { year: 234, where: "五丈原", tag: "异闻", chapter: "第一百三回", text: "五丈原营中传出消息：诸葛亮服药后略有好转，蜀军已开始收拾行装，准备退兵。", quotes: { shu: 52 } }
+        ]
+      }
+    ]
   },
   {
     year: 249, where: "洛阳", preview: "天子出城谒陵",
@@ -342,7 +414,19 @@ const story = [
       { year: 264, where: "建业", tag: "朝局", chapter: "第一百二十回", text: "吴主孙休病逝，濮阳兴、张布迎立孙皓，江东易主。", quotes: { wu: 60 } },
       { year: 264, where: "洛阳", tag: "朝局", chapter: "第一百十九回", text: "司马昭进爵晋王，曹奂只守虚位，魏室名存实亡。", quotes: { jin: 190, wei: 20 } }
     ],
-    quotes: { wei: 0, wu: 53, jin: 219 }
+    quotes: { wei: 0, wu: 53, jin: 219 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "禅让未成",
+        title: "禅让未成",
+        quotes: { wei: 0, wu: 53, jin: 148 },
+        outcome: "曹奂在殿上推辞禅位，司马炎称病还邺，两宫僵持半年。魏室终究名存实亡，曹氏仍难逃退市；司马氏虽得天下，元气却大伤。",
+        clues: [
+          { year: 265, where: "洛阳", tag: "朝局", chapter: "第一百十九回", text: "洛阳传出消息：曹奂在殿上推辞禅位，只说「朕德薄，未敢奉天」；晋王司马炎称病还邺。", quotes: { wei: 12, jin: 172 } }
+        ]
+      }
+    ]
   },
   {
     year: 280, where: "建业", preview: "晋军抵近江东",
@@ -355,6 +439,19 @@ const story = [
       { year: 280, where: "建业", tag: "朝局", chapter: "第一百二十回", text: "孙皓宴饮无度，置黄门郎纠弹群臣，犯者或剥面、或凿眼，江东人人自危。", quotes: { wu: 40 } },
       { year: 280, where: "长江", tag: "战报", chapter: "第一百二十回", text: "王濬率楼船顺江而下，吴军铁锁横江，被晋军火炬熔断，晋军直抵石头城。", quotes: { wu: 20, jin: 270 } }
     ],
-    quotes: { wu: 0, jin: 286 }
+    quotes: { wu: 0, jin: 286 },
+    variants: [
+      { label: "原线" },
+      {
+        label: "铁锁未破",
+        title: "王濬受阻",
+        quotes: { wu: 78, jin: 206 },
+        outcome: "吴军铁锁横江，火船逆流冲撞，晋军楼船受挫退回江北。孙皓仍据建业，江东未下，孙氏得以留在场上。",
+        patches: {
+          1: { year: 278, where: "洛阳", tag: "人事", chapter: "第一百二十回", text: "羊祜病重，临终举荐杜预接任；晋廷决意大举伐吴，却听说吴人在江上横设铁锁、以火船守江。", quotes: { jin: 244, wu: 56 } },
+          3: { year: 280, where: "长江", tag: "战报", chapter: "第一百二十回", text: "王濬率楼船顺江而下，吴军在江面横设铁锁，又以火船逆流冲撞；晋军前锋受挫，退屯江北。", quotes: { wu: 64, jin: 214 } }
+        }
+      }
+    ]
   }
 ];
